@@ -1,5 +1,5 @@
-import crypto from 'crypto';
-import { createClient } from '@supabase/supabase-js';
+const crypto = require('crypto');
+const { createClient } = require('@supabase/supabase-js');
 
 // Configuration Supabase
 const supabase = createClient(
@@ -17,7 +17,7 @@ const NOTION_CONFIG = {
 // Pour la demo, on utilise un Map global (pas idéal en production)
 global.oauthStates = global.oauthStates || new Map();
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Configure CORS
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
@@ -41,10 +41,23 @@ export default async function handler(req, res) {
       clientSecret: NOTION_CONFIG.clientSecret ? 'PRESENT' : 'MISSING',
       userId: userId ? 'PRESENT' : 'MISSING'
     });
+    
+    console.log('🔍 Variables environnement:', {
+      NEXT_PUBLIC_NOTION_CLIENT_ID: process.env.NEXT_PUBLIC_NOTION_CLIENT_ID ? 'PRESENT' : 'MISSING',
+      NOTION_CLIENT_SECRET: process.env.NOTION_CLIENT_SECRET ? 'PRESENT' : 'MISSING',
+    });
 
     if (!NOTION_CONFIG.clientId || !NOTION_CONFIG.clientSecret) {
+      console.error('❌ Configuration manquante:', {
+        clientId: NOTION_CONFIG.clientId,
+        clientSecret: NOTION_CONFIG.clientSecret ? '[HIDDEN]' : 'undefined'
+      });
       return res.status(500).json({ 
-        error: 'Configuration Notion manquante. Vérifiez vos variables d\'environnement.' 
+        error: 'Configuration Notion manquante. Vérifiez vos variables d\'environnement.',
+        debug: {
+          clientId: NOTION_CONFIG.clientId ? 'PRESENT' : 'MISSING',
+          clientSecret: NOTION_CONFIG.clientSecret ? 'PRESENT' : 'MISSING'
+        }
       });
     }
 
