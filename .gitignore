@@ -1,0 +1,11 @@
+# Node / Vite / macOS
+node_modules/
+.npm-cache/
+build/
+dist/
+.DS_Store
+.vercel/
+.env
+.env.local
+.env.*.local
+
