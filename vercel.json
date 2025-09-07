@@ -5,11 +5,6 @@
   "framework": "vite",
   "cleanUrls": true,
   "trailingSlash": false,
-  "functions": {
-    "api/**/*.js": {
-      "runtime": "@vercel/node"
-    }
-  },
   "rewrites": [
     {
       "source": "/auth/callback/notion",
