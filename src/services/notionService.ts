@@ -2,11 +2,16 @@ import { supabase } from '../utils/supabase/client';
 
 // Configuration Notion OAuth
 const NOTION_CONFIG = {
-  clientId: process.env.NEXT_PUBLIC_NOTION_CLIENT_ID || 'demo-client-id',
-  clientSecret: process.env.NOTION_CLIENT_SECRET || 'demo-client-secret',
+  clientId: process.env.NEXT_PUBLIC_NOTION_CLIENT_ID,
+  clientSecret: process.env.NOTION_CLIENT_SECRET,
   redirectUri: `${window.location.origin}/integrations/callback/notion`,
   authUrl: 'https://api.notion.com/v1/oauth/authorize',
   tokenUrl: 'https://api.notion.com/v1/oauth/token'
+};
+
+// Vérifier la configuration au chargement
+const isConfigured = () => {
+  return !!(NOTION_CONFIG.clientId && NOTION_CONFIG.clientSecret);
 };
 
 export interface NotionPage {
@@ -78,11 +83,20 @@ export class NotionService {
   public initiateOAuth(): Promise<{ success: boolean; authUrl?: string; error?: string }> {
     return new Promise((resolve) => {
       try {
+        // Vérifier la configuration
+        if (!isConfigured()) {
+          resolve({ 
+            success: false, 
+            error: 'Configuration Notion manquante. Vérifiez vos variables d\'environnement NEXT_PUBLIC_NOTION_CLIENT_ID et NOTION_CLIENT_SECRET.'
+          });
+          return;
+        }
+
         const state = this.generateState();
         localStorage.setItem('notion_oauth_state', state);
 
         const params = new URLSearchParams({
-          client_id: NOTION_CONFIG.clientId,
+          client_id: NOTION_CONFIG.clientId!,
           response_type: 'code',
           owner: 'user',
           redirect_uri: NOTION_CONFIG.redirectUri,
@@ -171,7 +185,7 @@ export class NotionService {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'Authorization': `Basic ${btoa(`${NOTION_CONFIG.clientId}:${NOTION_CONFIG.clientSecret}`)}`
+        'Authorization': `Basic ${btoa(`${NOTION_CONFIG.clientId!}:${NOTION_CONFIG.clientSecret!}`)}`
       },
       body: JSON.stringify({
         grant_type: 'authorization_code',
@@ -229,6 +243,11 @@ export class NotionService {
       await this.loadAccessToken();
     }
     return !!this.accessToken;
+  }
+
+  // Vérifier si la configuration OAuth est complète
+  public isConfigured(): boolean {
+    return isConfigured();
   }
 
   // Faire une requête à l'API Notion

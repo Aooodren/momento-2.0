@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useSupabaseIntegrations } from "../hooks/useSupabaseIntegrations";
 import { notionService } from "../services/notionService";
+import NotionConfigHelper from "./NotionConfigHelper";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
@@ -39,6 +40,7 @@ interface IntegrationsPageProps {
 
 export default function IntegrationsPage({ onBack }: IntegrationsPageProps) {
   const [selectedTool, setSelectedTool] = useState<IntegrationTool | null>(null);
+  const [showNotionConfig, setShowNotionConfig] = useState(false);
   const { 
     integrations, 
     connectIntegration, 
@@ -112,6 +114,12 @@ export default function IntegrationsPage({ onBack }: IntegrationsPageProps) {
   const handleConnect = async (tool: IntegrationTool) => {
     try {
       if (tool.id === 'notion') {
+        // Vérifier si Notion est configuré
+        if (!notionService.isConfigured()) {
+          setShowNotionConfig(true);
+          return;
+        }
+        
         // Utiliser le vrai service OAuth Notion
         const result = await notionService.initiateOAuth();
         if (!result.success) {
@@ -476,6 +484,11 @@ export default function IntegrationsPage({ onBack }: IntegrationsPageProps) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Helper de configuration Notion */}
+      {showNotionConfig && (
+        <NotionConfigHelper onClose={() => setShowNotionConfig(false)} />
+      )}
     </div>
   );
 }

@@ -29,6 +29,7 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
+
 -- Trigger pour mettre à jour updated_at automatiquement
 DROP TRIGGER IF EXISTS update_user_integrations_updated_at ON user_integrations;
 CREATE TRIGGER update_user_integrations_updated_at
