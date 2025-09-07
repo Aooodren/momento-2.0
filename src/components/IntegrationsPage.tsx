@@ -114,15 +114,14 @@ export default function IntegrationsPage({ onBack }: IntegrationsPageProps) {
   const handleConnect = async (tool: IntegrationTool) => {
     try {
       if (tool.id === 'notion') {
-        // Vérifier si Notion est configuré
-        if (!notionService.isConfigured()) {
-          setShowNotionConfig(true);
-          return;
-        }
-        
-        // Utiliser le vrai service OAuth Notion
+        // Essayer directement la connexion OAuth Notion
         const result = await notionService.initiateOAuth();
         if (!result.success) {
+          // Seulement maintenant, si ça échoue à cause de la config, on affiche l'aide
+          if (result.error?.includes('Configuration Notion manquante')) {
+            setShowNotionConfig(true);
+            return;
+          }
           throw new Error(result.error || 'Échec de la connexion OAuth');
         }
         // Le token sera automatiquement sauvegardé dans Supabase par le service
