@@ -26,7 +26,7 @@ export default function NotionConnectButton({ onConnect, onError, className }: N
       // Démarrer le flow OAuth - URL dynamique selon l'environnement
       const apiUrl = window.location.origin.includes('localhost') 
         ? 'http://localhost:3002/api/notion/auth'  // Local: serveur Express
-        : 'https://momento-oauth.up.railway.app/api/notion/auth';  // Production: Railway
+        : '/api/notion/auth';  // Production: fonctions Vercel
       
       const response = await fetch(apiUrl, {
         method: 'POST',

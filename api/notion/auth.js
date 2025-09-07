@@ -1,9 +1,9 @@
-const crypto = require('crypto');
-
 // Store temporaire pour les states OAuth 
-global.oauthStates = global.oauthStates || new Map();
+if (!globalThis.oauthStates) {
+  globalThis.oauthStates = new Map();
+}
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   // Configure CORS
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
@@ -20,7 +20,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { userId } = req.body;
+    const { userId } = req.body || {};
 
     const clientId = process.env.NEXT_PUBLIC_NOTION_CLIENT_ID;
     const clientSecret = process.env.NOTION_CLIENT_SECRET;
@@ -28,7 +28,9 @@ module.exports = async function handler(req, res) {
     console.log('🔍 Configuration Notion:', {
       clientId: clientId ? 'PRESENT' : 'MISSING',
       clientSecret: clientSecret ? 'PRESENT' : 'MISSING',
-      userId: userId ? 'PRESENT' : 'MISSING'
+      userId: userId ? 'PRESENT' : 'MISSING',
+      method: req.method,
+      body: req.body
     });
 
     if (!clientId || !clientSecret) {
@@ -37,31 +39,36 @@ module.exports = async function handler(req, res) {
         clientSecret: clientSecret ? '[HIDDEN]' : 'undefined'
       });
       return res.status(500).json({ 
-        error: 'Configuration Notion manquante. Vérifiez vos variables d\'environnement.',
+        error: 'Configuration Notion manquante',
         debug: {
           clientId: clientId ? 'PRESENT' : 'MISSING',
-          clientSecret: clientSecret ? 'PRESENT' : 'MISSING'
+          clientSecret: clientSecret ? 'PRESENT' : 'MISSING',
+          env: Object.keys(process.env).filter(k => k.includes('NOTION'))
         }
       });
     }
 
     if (!userId) {
       return res.status(400).json({ 
-        error: 'ID utilisateur requis' 
+        error: 'ID utilisateur requis',
+        received: { userId, body: req.body }
       });
     }
 
-    // Générer un state unique
-    const state = crypto.randomBytes(32).toString('hex');
-    global.oauthStates.set(state, { 
+    // Générer un state unique avec crypto Web API
+    const array = new Uint8Array(32);
+    crypto.getRandomValues(array);
+    const state = Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+    
+    globalThis.oauthStates.set(state, { 
       timestamp: Date.now(),
       userId: userId 
     });
 
     // Nettoyer les anciens states (plus de 10 minutes)
-    for (const [key, value] of global.oauthStates.entries()) {
+    for (const [key, value] of globalThis.oauthStates.entries()) {
       if (Date.now() - value.timestamp > 10 * 60 * 1000) {
-        global.oauthStates.delete(key);
+        globalThis.oauthStates.delete(key);
       }
     }
 
@@ -78,13 +85,22 @@ module.exports = async function handler(req, res) {
     const authUrl = `https://api.notion.com/v1/oauth/authorize?${params.toString()}`;
 
     console.log('✅ AuthURL généré:', authUrl);
-    res.json({ authUrl });
+    
+    return res.status(200).json({ 
+      authUrl,
+      debug: {
+        redirectUri,
+        state: state.substring(0, 8) + '...',
+        statesCount: globalThis.oauthStates.size
+      }
+    });
     
   } catch (error) {
     console.error('Erreur initialisation OAuth:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: 'Erreur serveur',
-      message: error.message 
+      message: error.message,
+      stack: error.stack
     });
   }
 }
