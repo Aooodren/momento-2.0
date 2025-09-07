@@ -10,6 +10,7 @@ import {
   Zap
 } from "lucide-react";
 import { useSupabaseIntegrations } from "../hooks/useSupabaseIntegrations";
+import { notionService } from "../services/notionService";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
@@ -110,7 +111,17 @@ export default function IntegrationsPage({ onBack }: IntegrationsPageProps) {
 
   const handleConnect = async (tool: IntegrationTool) => {
     try {
-      await connectIntegration(tool.id);
+      if (tool.id === 'notion') {
+        // Utiliser le vrai service OAuth Notion
+        const result = await notionService.initiateOAuth();
+        if (!result.success) {
+          throw new Error(result.error || 'Échec de la connexion OAuth');
+        }
+        // Le token sera automatiquement sauvegardé dans Supabase par le service
+      } else {
+        // Utiliser la simulation pour les autres services
+        await connectIntegration(tool.id);
+      }
     } catch (error) {
       console.error(`Erreur lors de la connexion à ${tool.name}:`, error);
     }

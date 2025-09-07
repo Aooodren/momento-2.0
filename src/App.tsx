@@ -11,10 +11,11 @@ import AuthPage from "./components/AuthPage";
 import InvitationPageSupabase from "./components/InvitationPageSupabase";
 import TokenInvitationPage from "./components/TokenInvitationPage";
 import IntegrationsPage from "./components/IntegrationsPage";
+import NotionOAuthCallback from "./components/NotionOAuthCallback";
 import { Loader2 } from "lucide-react";
 import { useAuth, AuthContext } from "./hooks/useAuth";
 
-type PageType = 'myproject' | 'liked' | 'detail' | 'editor' | 'settings' | 'share' | 'project-edit' | 'invitation' | 'integrations';
+type PageType = 'myproject' | 'liked' | 'detail' | 'editor' | 'settings' | 'share' | 'project-edit' | 'invitation' | 'integrations' | 'oauth-callback';
 
 interface ProjectDetails {
   id: string; // Changed to string for consistency with KV store
@@ -37,6 +38,12 @@ export default function App() {
     const projectParam = urlParams.get('project');
     const roleParam = urlParams.get('role');
     const token = urlParams.get('token');
+    
+    // Check for OAuth callback (Notion, etc.)
+    if (window.location.pathname.includes('/integrations/callback/')) {
+      setCurrentPage('oauth-callback');
+      return;
+    }
     
     // Check for token-based invitations (for existing users)
     if (token) {
@@ -259,6 +266,14 @@ export default function App() {
         return <SettingsPage onBack={() => navigateToPage(previousPage)} />;
 
       case 'integrations':
+        return <IntegrationsPage onBack={() => navigateToPage(previousPage)} />;
+
+      case 'oauth-callback':
+        // Déterminer quel service OAuth selon l'URL
+        if (window.location.pathname.includes('/notion')) {
+          return <NotionOAuthCallback />;
+        }
+        // Fallback vers la page d'intégrations
         return <IntegrationsPage onBack={() => navigateToPage(previousPage)} />;
 
       case 'share':
