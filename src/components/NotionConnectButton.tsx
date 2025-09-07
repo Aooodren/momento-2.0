@@ -23,8 +23,12 @@ export default function NotionConnectButton({ onConnect, onError, className }: N
         throw new Error('Utilisateur non connecté');
       }
 
-      // Démarrer le flow OAuth
-      const response = await fetch('http://localhost:3002/api/notion/auth', {
+      // Démarrer le flow OAuth - URL dynamique selon l'environnement
+      const apiUrl = window.location.origin.includes('localhost') 
+        ? 'http://localhost:3002/api/notion/auth'  // Local: serveur Express
+        : '/api/notion/auth';  // Production: fonction Vercel
+      
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

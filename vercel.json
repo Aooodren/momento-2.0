@@ -1,10 +1,21 @@
 {
   "version": 2,
   "buildCommand": "npm run build",
-  "outputDirectory": "build",
-  "framework": null,
+  "outputDirectory": "dist",
+  "framework": "vite",
   "cleanUrls": true,
   "trailingSlash": false,
+  "functions": {
+    "api/**/*.js": {
+      "runtime": "@vercel/node"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/auth/callback/notion",
+      "destination": "/api/auth/callback/notion"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
