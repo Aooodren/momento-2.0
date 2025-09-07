@@ -2,6 +2,7 @@
       "name": "TRY",
       "version": "0.1.0",
       "private": true,
+      "type": "module",
       "dependencies": {
             "@radix-ui/react-accordion": "^1.2.3",
             "@radix-ui/react-alert-dialog": "^1.1.6",
@@ -48,7 +49,11 @@
             "recharts": "^2.15.2",
             "sonner": "^2.0.3",
             "tailwind-merge": "*",
-            "vaul": "^1.1.2"
+            "vaul": "^1.1.2",
+            "express": "^4.18.2",
+            "cors": "^2.8.5",
+            "dotenv": "^16.3.1",
+            "concurrently": "^8.2.2"
       },
       "devDependencies": {
             "@anthropic-ai/claude-code": "^1.0.108",
@@ -58,6 +63,8 @@
       },
       "scripts": {
             "dev": "vite",
+            "dev:server": "node server/index.js",
+            "dev:full": "concurrently \"npm run dev\" \"npm run dev:server\"",
             "build": "vite build",
             "claude": "claude"
       }

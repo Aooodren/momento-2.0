@@ -83,14 +83,10 @@ export class NotionService {
   public initiateOAuth(): Promise<{ success: boolean; authUrl?: string; error?: string }> {
     return new Promise((resolve) => {
       try {
-        // Vérifier la configuration
-        if (!isConfigured()) {
-          resolve({ 
-            success: false, 
-            error: 'Configuration Notion manquante. Vérifiez vos variables d\'environnement NEXT_PUBLIC_NOTION_CLIENT_ID et NOTION_CLIENT_SECRET.'
-          });
-          return;
-        }
+        console.log('🔍 Tentative de connexion Notion avec:', {
+          clientId: NOTION_CONFIG.clientId ? 'PRESENT' : 'MISSING',
+          clientSecret: NOTION_CONFIG.clientSecret ? 'PRESENT' : 'MISSING'
+        });
 
         const state = this.generateState();
         localStorage.setItem('notion_oauth_state', state);

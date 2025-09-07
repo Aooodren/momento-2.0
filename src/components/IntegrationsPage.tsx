@@ -10,8 +10,7 @@ import {
   Zap
 } from "lucide-react";
 import { useSupabaseIntegrations } from "../hooks/useSupabaseIntegrations";
-import { notionService } from "../services/notionService";
-import NotionConfigHelper from "./NotionConfigHelper";
+import NotionConnectButton from "./NotionConnectButton";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
@@ -40,7 +39,6 @@ interface IntegrationsPageProps {
 
 export default function IntegrationsPage({ onBack }: IntegrationsPageProps) {
   const [selectedTool, setSelectedTool] = useState<IntegrationTool | null>(null);
-  const [showNotionConfig, setShowNotionConfig] = useState(false);
   const { 
     integrations, 
     connectIntegration, 
@@ -48,7 +46,8 @@ export default function IntegrationsPage({ onBack }: IntegrationsPageProps) {
     getIntegrationStatus,
     isConnected,
     isLoading,
-    error
+    error,
+    refetch
   } = useSupabaseIntegrations();
 
   const integrationTools: IntegrationTool[] = [
@@ -113,25 +112,23 @@ export default function IntegrationsPage({ onBack }: IntegrationsPageProps) {
 
   const handleConnect = async (tool: IntegrationTool) => {
     try {
-      if (tool.id === 'notion') {
-        // Essayer directement la connexion OAuth Notion
-        const result = await notionService.initiateOAuth();
-        if (!result.success) {
-          // Seulement maintenant, si ça échoue à cause de la config, on affiche l'aide
-          if (result.error?.includes('Configuration Notion manquante')) {
-            setShowNotionConfig(true);
-            return;
-          }
-          throw new Error(result.error || 'Échec de la connexion OAuth');
-        }
-        // Le token sera automatiquement sauvegardé dans Supabase par le service
-      } else {
-        // Utiliser la simulation pour les autres services
+      // Utiliser la simulation pour tous les services sauf Notion
+      if (tool.id !== 'notion') {
         await connectIntegration(tool.id);
       }
+      // Pour Notion, on utilise le NotionConnectButton qui gère tout
     } catch (error) {
       console.error(`Erreur lors de la connexion à ${tool.name}:`, error);
     }
+  };
+
+  const handleNotionConnect = () => {
+    console.log('Notion connecté avec succès');
+    refetch(); // Recharger les intégrations pour mettre à jour l'état
+  };
+
+  const handleNotionError = (error: string) => {
+    console.error('Erreur connexion Notion:', error);
   };
 
   const handleDisconnect = async (toolId: string) => {
@@ -359,23 +356,31 @@ export default function IntegrationsPage({ onBack }: IntegrationsPageProps) {
                                 </Button>
                               </>
                             ) : (
-                              <Button
-                                onClick={() => handleConnect(tool)}
-                                disabled={tool.status === 'connecting' || !tool.isAvailable}
-                                className="min-w-[100px]"
-                              >
-                                {tool.status === 'connecting' ? (
-                                  <>
-                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                    Connexion...
-                                  </>
-                                ) : (
-                                  <>
-                                    <Link2 className="h-4 w-4 mr-2" />
-                                    Connecter
-                                  </>
-                                )}
-                              </Button>
+                              tool.id === 'notion' ? (
+                                <NotionConnectButton
+                                  onConnect={handleNotionConnect}
+                                  onError={handleNotionError}
+                                  className="min-w-[100px]"
+                                />
+                              ) : (
+                                <Button
+                                  onClick={() => handleConnect(tool)}
+                                  disabled={tool.status === 'connecting' || !tool.isAvailable}
+                                  className="min-w-[100px]"
+                                >
+                                  {tool.status === 'connecting' ? (
+                                    <>
+                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                      Connexion...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Link2 className="h-4 w-4 mr-2" />
+                                      Connecter
+                                    </>
+                                  )}
+                                </Button>
+                              )
                             )}
                           </div>
                         </div>
@@ -484,10 +489,6 @@ export default function IntegrationsPage({ onBack }: IntegrationsPageProps) {
         </DialogContent>
       </Dialog>
 
-      {/* Helper de configuration Notion */}
-      {showNotionConfig && (
-        <NotionConfigHelper onClose={() => setShowNotionConfig(false)} />
-      )}
     </div>
   );
 }
