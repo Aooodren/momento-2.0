@@ -15,7 +15,8 @@ import {
   Settings,
   Plus,
   FileText,
-  Star
+  Star,
+  Link2
 } from "lucide-react";
 import Vector from "../imports/Vector";
 import { useAuthContext } from "../hooks/useAuth";
@@ -52,7 +53,7 @@ interface EditorTab {
 
 interface NavigationSidebarProps {
   currentPage: string;
-  onPageChange: (page: 'myproject' | 'liked') => void;
+  onPageChange: (page: 'myproject' | 'liked' | 'integrations') => void;
   collapsed: boolean;
   onToggleCollapse: () => void;
   selectedProject?: ProjectDetails | null;
@@ -157,7 +158,7 @@ export default function NavigationSidebar({
   };
 
   // Navigation vers les pages principales sans fermer les onglets
-  const handleMainPageNavigation = (page: 'myproject' | 'liked') => {
+  const handleMainPageNavigation = (page: 'myproject' | 'liked' | 'integrations') => {
     // Ne plus fermer automatiquement les onglets - les garder persistants
     onPageChange(page);
   };
@@ -382,6 +383,13 @@ export default function NavigationSidebar({
                 label="Liked"
                 isActive={currentPage === 'liked'}
                 onClick={() => handleMainPageNavigation('liked')}
+                collapsed={collapsed}
+              />
+              <NavigationItem
+                icon={Link2}
+                label="Intégrations"
+                isActive={currentPage === 'integrations'}
+                onClick={() => handleMainPageNavigation('integrations')}
                 collapsed={collapsed}
               />
             </div>

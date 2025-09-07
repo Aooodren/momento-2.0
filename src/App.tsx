@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import NavigationSidebar from "./components/NavigationSidebar";
 import MyProjectPage from "./components/MyProjectPage";
 import LikedPage from "./components/LikedPage";
@@ -10,10 +10,11 @@ import ProjectEditPage from "./components/ProjectEditPage";
 import AuthPage from "./components/AuthPage";
 import InvitationPageSupabase from "./components/InvitationPageSupabase";
 import TokenInvitationPage from "./components/TokenInvitationPage";
+import IntegrationsPage from "./components/IntegrationsPage";
 import { Loader2 } from "lucide-react";
 import { useAuth, AuthContext } from "./hooks/useAuth";
 
-type PageType = 'myproject' | 'liked' | 'detail' | 'editor' | 'settings' | 'share' | 'project-edit' | 'invitation';
+type PageType = 'myproject' | 'liked' | 'detail' | 'editor' | 'settings' | 'share' | 'project-edit' | 'invitation' | 'integrations';
 
 interface ProjectDetails {
   id: string; // Changed to string for consistency with KV store
@@ -256,6 +257,9 @@ export default function App() {
 
       case 'settings':
         return <SettingsPage onBack={() => navigateToPage(previousPage)} />;
+
+      case 'integrations':
+        return <IntegrationsPage onBack={() => navigateToPage(previousPage)} />;
 
       case 'share':
         if (!selectedProject) return <MyProjectPage onProjectSelect={navigateToProject} />;
