@@ -1,20 +1,6 @@
 const crypto = require('crypto');
-const { createClient } = require('@supabase/supabase-js');
 
-// Configuration Supabase
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
-
-// Configuration Notion
-const NOTION_CONFIG = {
-  clientId: process.env.NEXT_PUBLIC_NOTION_CLIENT_ID,
-  clientSecret: process.env.NOTION_CLIENT_SECRET,
-};
-
-// Store temporaire pour les states OAuth (en production, utiliser Redis ou KV)
-// Pour la demo, on utilise un Map global (pas idéal en production)
+// Store temporaire pour les states OAuth 
 global.oauthStates = global.oauthStates || new Map();
 
 module.exports = async function handler(req, res) {
@@ -36,27 +22,25 @@ module.exports = async function handler(req, res) {
   try {
     const { userId } = req.body;
 
+    const clientId = process.env.NEXT_PUBLIC_NOTION_CLIENT_ID;
+    const clientSecret = process.env.NOTION_CLIENT_SECRET;
+
     console.log('🔍 Configuration Notion:', {
-      clientId: NOTION_CONFIG.clientId ? 'PRESENT' : 'MISSING',
-      clientSecret: NOTION_CONFIG.clientSecret ? 'PRESENT' : 'MISSING',
+      clientId: clientId ? 'PRESENT' : 'MISSING',
+      clientSecret: clientSecret ? 'PRESENT' : 'MISSING',
       userId: userId ? 'PRESENT' : 'MISSING'
     });
-    
-    console.log('🔍 Variables environnement:', {
-      NEXT_PUBLIC_NOTION_CLIENT_ID: process.env.NEXT_PUBLIC_NOTION_CLIENT_ID ? 'PRESENT' : 'MISSING',
-      NOTION_CLIENT_SECRET: process.env.NOTION_CLIENT_SECRET ? 'PRESENT' : 'MISSING',
-    });
 
-    if (!NOTION_CONFIG.clientId || !NOTION_CONFIG.clientSecret) {
+    if (!clientId || !clientSecret) {
       console.error('❌ Configuration manquante:', {
-        clientId: NOTION_CONFIG.clientId,
-        clientSecret: NOTION_CONFIG.clientSecret ? '[HIDDEN]' : 'undefined'
+        clientId: clientId || 'undefined',
+        clientSecret: clientSecret ? '[HIDDEN]' : 'undefined'
       });
       return res.status(500).json({ 
         error: 'Configuration Notion manquante. Vérifiez vos variables d\'environnement.',
         debug: {
-          clientId: NOTION_CONFIG.clientId ? 'PRESENT' : 'MISSING',
-          clientSecret: NOTION_CONFIG.clientSecret ? 'PRESENT' : 'MISSING'
+          clientId: clientId ? 'PRESENT' : 'MISSING',
+          clientSecret: clientSecret ? 'PRESENT' : 'MISSING'
         }
       });
     }
@@ -84,7 +68,7 @@ module.exports = async function handler(req, res) {
     const redirectUri = `${req.headers.origin || 'https://momento-2-0.vercel.app'}/auth/callback/notion`;
 
     const params = new URLSearchParams({
-      client_id: NOTION_CONFIG.clientId,
+      client_id: clientId,
       response_type: 'code',
       owner: 'user',
       redirect_uri: redirectUri,
@@ -93,9 +77,14 @@ module.exports = async function handler(req, res) {
 
     const authUrl = `https://api.notion.com/v1/oauth/authorize?${params.toString()}`;
 
+    console.log('✅ AuthURL généré:', authUrl);
     res.json({ authUrl });
+    
   } catch (error) {
     console.error('Erreur initialisation OAuth:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ 
+      error: 'Erreur serveur',
+      message: error.message 
+    });
   }
 }

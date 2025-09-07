@@ -1,17 +1,3 @@
-const { createClient } = require('@supabase/supabase-js');
-
-// Configuration Supabase
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
-
-// Configuration Notion
-const NOTION_CONFIG = {
-  clientId: process.env.NEXT_PUBLIC_NOTION_CLIENT_ID,
-  clientSecret: process.env.NOTION_CLIENT_SECRET,
-};
-
 // Store temporaire pour les states OAuth
 global.oauthStates = global.oauthStates || new Map();
 
@@ -64,6 +50,8 @@ module.exports = async function handler(req, res) {
     const stateData = global.oauthStates.get(state);
     global.oauthStates.delete(state);
 
+    const clientId = process.env.NEXT_PUBLIC_NOTION_CLIENT_ID;
+    const clientSecret = process.env.NOTION_CLIENT_SECRET;
     const redirectUri = `${origin}/auth/callback/notion`;
 
     // Échanger le code contre un access token
@@ -72,7 +60,7 @@ module.exports = async function handler(req, res) {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'Authorization': `Basic ${Buffer.from(`${NOTION_CONFIG.clientId}:${NOTION_CONFIG.clientSecret}`).toString('base64')}`
+        'Authorization': `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`
       },
       body: JSON.stringify({
         grant_type: 'authorization_code',
@@ -97,12 +85,21 @@ module.exports = async function handler(req, res) {
 
     const tokenData = await tokenResponse.json();
 
-    // Sauvegarder dans Supabase
+    // Sauvegarder dans Supabase avec fetch natif
     if (stateData.userId) {
       try {
-        const { error: upsertError } = await supabase
-          .from('user_integrations')
-          .upsert({
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+        const supabaseResponse = await fetch(`${supabaseUrl}/rest/v1/user_integrations`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Prefer': 'resolution=merge-duplicates'
+          },
+          body: JSON.stringify({
             user_id: stateData.userId,
             integration_type: 'notion',
             status: 'connected',
@@ -120,13 +117,13 @@ module.exports = async function handler(req, res) {
             },
             last_sync: new Date().toISOString(),
             updated_at: new Date().toISOString()
-          }, {
-            onConflict: 'user_id,integration_type'
-          });
+          })
+        });
 
-        if (upsertError) {
-          console.error('Erreur sauvegarde Supabase:', upsertError);
-          throw upsertError;
+        if (!supabaseResponse.ok) {
+          const errorData = await supabaseResponse.text();
+          console.error('Erreur Supabase:', errorData);
+          throw new Error(`Supabase error: ${errorData}`);
         }
 
         console.log('✅ Token sauvegardé pour utilisateur:', stateData.userId);
