@@ -20,7 +20,6 @@ import ReactFlow, {
   NodeTypes,
   BackgroundVariant,
   OnConnect,
-  type OnNodeDrag,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -107,6 +106,7 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
     deleteRelation,
     checkHealth,
     initDemo,
+    saveCanvasData,
   } = useCanvasAPI();
 
   // Hook pour les projets
@@ -383,9 +383,38 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
     }
   };
 
+  // Helper pour construire les données du canvas
+  const buildCanvasData = useCallback(() => {
+    const nodePositions: { [key: string]: { x: number; y: number } } = {};
+    nodes.forEach((n) => {
+      nodePositions[n.id] = { x: n.position.x, y: n.position.y };
+    });
+
+    const minimalNodes = nodes.map((n) => ({
+      id: n.id,
+      label: (n as any).data?.title || (n as any).data?.label,
+      description: (n as any).data?.description,
+      category: (n as any).data?.category,
+      metadata: (n as any).data?.metadata,
+    }));
+
+    const minimalEdges = edges.map((e) => ({
+      source: e.source,
+      target: e.target,
+      type: (e as any).data?.type || 'connection',
+    }));
+
+    return {
+      nodes: minimalNodes,
+      edges: minimalEdges,
+      nodePositions,
+    };
+  }, [nodes, edges]);
+
   // Sauvegarde automatique des positions avec debounce
   const savePositions = useCallback(() => {
-    const updates = Array.from(positionUpdatesRef.current.entries()).map(([id, position]: [string, { position_x: number; position_y: number }]) => ({
+    const entries = Array.from(positionUpdatesRef.current.entries()) as Array<[string, { position_x: number; position_y: number }]>;
+    const updates = entries.map(([id, position]) => ({
       id,
       ...position,
     }));
@@ -398,6 +427,11 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
           setLastSaved(new Date());
           setPendingChanges(false);
           positionUpdatesRef.current.clear();
+          // Sauvegarder aussi l'état complet du canvas côté serveur
+          const canvasData = buildCanvasData();
+          saveCanvasData(project.id, canvasData).catch((err: Error) => {
+            console.error('EditorPage - Failed to save canvas data after positions:', err);
+          });
         } else {
           console.error('EditorPage - Failed to save position updates');
         }
@@ -405,7 +439,7 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
         console.error('EditorPage - Error saving positions:', err);
       });
     }
-  }, [batchUpdatePositions]);
+  }, [batchUpdatePositions, buildCanvasData, saveCanvasData, project.id]);
 
   // Debounced save
   const debouncedSave = useCallback(() => {
@@ -416,7 +450,7 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
   }, [savePositions]);
 
   // Gestionnaire de déplacement de nœuds
-  const handleNodeDragStop: OnNodeDrag = useCallback((_, node: Node) => {
+  const handleNodeDragStop = useCallback((_, node: Node) => {
     const blockId = node.id;
     console.log(`EditorPage - Position update for block: ${blockId}`);
     
@@ -459,11 +493,16 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
         setEdges((eds) => addEdge(newEdge, eds));
         setRelations((rels) => [...rels, relation]);
         console.log('EditorPage - Relation created successfully:', relation.id);
+        // Sauvegarder l'état complet du canvas côté serveur
+        const canvasData = buildCanvasData();
+        saveCanvasData(project.id, canvasData).catch((err: Error) => {
+          console.error('EditorPage - Failed to save canvas data after connect:', err);
+        });
       }
     } catch (err) {
       console.error('EditorPage - Error creating relation:', err);
     }
-  }, [project.id, createRelation]);
+  }, [project.id, createRelation, buildCanvasData, saveCanvasData]);
 
   // Gestionnaire de suppression d'arête
   const handleEdgeDelete = useCallback(async (edgeId: string) => {
@@ -474,11 +513,16 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
         setEdges((eds) => eds.filter((edge) => edge.id !== edgeId));
         setRelations((rels) => rels.filter((rel) => rel.id !== edgeId));
         console.log('EditorPage - Edge deleted successfully:', edgeId);
+        // Sauvegarder l'état complet du canvas côté serveur
+        const canvasData = buildCanvasData();
+        saveCanvasData(project.id, canvasData).catch((err: Error) => {
+          console.error('EditorPage - Failed to save canvas data after edge delete:', err);
+        });
       }
     } catch (err) {
       console.error('EditorPage - Error deleting relation:', err);
     }
-  }, [deleteRelation]);
+  }, [deleteRelation, buildCanvasData, saveCanvasData, project.id]);
 
   // Gestion des raccourcis clavier
   useEffect(() => {

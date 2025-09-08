@@ -198,6 +198,20 @@ export function useCanvasAPI() {
     }
   }, [apiCall]);
 
+  // Canvas API
+  const saveCanvasData = useCallback(async (projectId: string, canvasData: any): Promise<boolean> => {
+    try {
+      const response = await apiCall(`/projects/${projectId}/canvas`, {
+        method: 'PUT',
+        body: JSON.stringify({ canvas_data: canvasData }),
+      });
+      return response?.success || true;
+    } catch (err) {
+      console.error('Failed to save canvas data:', err);
+      return false;
+    }
+  }, [apiCall]);
+
   // Relations API
   const getRelations = useCallback(async (projectId: string): Promise<Relation[]> => {
     setLoading(true);
@@ -286,6 +300,8 @@ export function useCanvasAPI() {
     updateBlock,
     deleteBlock,
     batchUpdatePositions,
+    // Canvas
+    saveCanvasData,
     // Relations
     getRelations,
     createRelation,

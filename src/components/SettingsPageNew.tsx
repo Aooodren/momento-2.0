@@ -16,8 +16,6 @@ import {
   Bell, 
   Shield, 
   Monitor, 
-  Moon, 
-  Sun, 
   Globe,
   Loader2,
   Save,
@@ -296,24 +294,7 @@ export default function SettingsPageNew({ onBack }: SettingsPageProps) {
         <h3 className="mb-4">Préférences d'affichage</h3>
         
         <div className="space-y-6">
-          {/* Thème */}
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                {preferences.theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-                <span className="font-medium">Mode sombre</span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Basculer entre le thème clair et sombre
-              </p>
-            </div>
-            <Switch 
-              checked={preferences.theme === 'dark'} 
-              onCheckedChange={(checked) => savePreferences({ theme: checked ? 'dark' : 'light' })}
-            />
-          </div>
-
-          <Separator />
+          {/* Note: Dark mode removed - app now uses light theme only */}
 
           {/* Langue */}
           <div className="space-y-3">

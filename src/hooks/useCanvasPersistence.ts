@@ -1,5 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Node, Edge } from 'reactflow';
+import { supabase } from '../utils/supabase/client';
+import { projectId as supabaseProjectId, publicAnonKey } from '../utils/supabase/info';
 
 interface CanvasData {
   nodes: any[];
@@ -15,6 +17,8 @@ interface UseCanvasPersistenceOptions {
   autoSaveDelay?: number; // en millisecondes
   enableAutoSave?: boolean;
 }
+
+const API_BASE = `https://${supabaseProjectId}.supabase.co/functions/v1/make-server-6c8ffc9e`;
 
 export function useCanvasPersistence({
   projectId,
@@ -66,18 +70,29 @@ export function useCanvasPersistence({
     }
   }, [getStorageKey, projectId]);
 
-  // Sauvegarder sur le serveur (Supabase) - à implémenter
+  // Sauvegarder sur le serveur (Supabase)
   const saveToServer = useCallback(async (data: CanvasData): Promise<boolean> => {
     try {
-      // TODO: Implémenter la sauvegarde Supabase
-      // const response = await fetch('/api/canvas/save', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ projectId, data })
-      // });
-      // return response.ok;
-      
-      console.log('Sauvegarde serveur (à implémenter):', data);
+      // Get access token (session) or fallback to anon for public endpoints
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token || publicAnonKey;
+
+      const response = await fetch(`${API_BASE}/projects/${String(projectId)}/canvas`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({ canvas_data: data })
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({} as any));
+        throw new Error(errData.error || `HTTP ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('Sauvegarde serveur réussie:', result);
       return true;
     } catch (error) {
       console.error('Erreur lors de la sauvegarde serveur:', error);
@@ -138,7 +153,7 @@ export function useCanvasPersistence({
     // Toujours sauvegarder en local
     const localSuccess = saveToLocalStorage(canvasData);
     
-    // Sauvegarder sur le serveur si demandé ou si c'est une sauvegarde manuelle
+    // Sauvegarder sur le serveur si demandé ou pour auto-save online
     let serverSuccess = true;
     if (forceServerSave) {
       serverSuccess = await saveToServer(canvasData);
@@ -178,7 +193,8 @@ export function useCanvasPersistence({
     viewport?: { x: number; y: number; zoom: number }
   ) => {
     if (hasUnsavedChanges && !isAutoSaving) {
-      await saveCanvasData(flowNodes, flowEdges, viewport, false);
+      // Enregistrer aussi en ligne lors des autosauvegardes
+      await saveCanvasData(flowNodes, flowEdges, viewport, true);
     }
   }, [hasUnsavedChanges, isAutoSaving, saveCanvasData]);
 

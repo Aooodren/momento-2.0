@@ -1,12 +1,12 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useUserPreferences } from '../hooks/useUserPreferences';
 
-type Theme = 'light' | 'dark' | 'system';
+type Theme = 'light'; // Only light mode supported
 
 interface ThemeContextType {
   theme: Theme;
   setTheme: (theme: Theme) => void;
-  actualTheme: 'light' | 'dark';
+  actualTheme: 'light';
 }
 
 const ThemeContext = createContext<ThemeContextType | null>(null);
@@ -24,42 +24,22 @@ interface ThemeProviderProps {
 }
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  const { preferences, savePreferences } = useUserPreferences();
-  const [actualTheme, setActualTheme] = useState<'light' | 'dark'>('light');
+  const { preferences } = useUserPreferences();
+  const [actualTheme] = useState<'light'>('light'); // Always light
 
-  const theme = preferences?.theme || 'system';
+  const theme: Theme = 'light'; // Force light theme
 
-  const setTheme = (newTheme: Theme) => {
-    savePreferences({ theme: newTheme });
+  const setTheme = (_newTheme: Theme) => {
+    // Do nothing - theme is locked to light
+    console.log('Theme is locked to light mode');
   };
 
   useEffect(() => {
     const root = document.documentElement;
     
-    const applyTheme = (isDark: boolean) => {
-      if (isDark) {
-        root.classList.add('dark');
-        setActualTheme('dark');
-      } else {
-        root.classList.remove('dark');
-        setActualTheme('light');
-      }
-    };
-
-    if (theme === 'system') {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      applyTheme(mediaQuery.matches);
-      
-      const handleChange = (e: MediaQueryListEvent) => {
-        applyTheme(e.matches);
-      };
-      
-      mediaQuery.addEventListener('change', handleChange);
-      return () => mediaQuery.removeEventListener('change', handleChange);
-    } else {
-      applyTheme(theme === 'dark');
-    }
-  }, [theme]);
+    // Always apply light theme
+    root.classList.remove('dark');
+  }, []);
 
   // Appliquer aussi la taille de police
   useEffect(() => {
