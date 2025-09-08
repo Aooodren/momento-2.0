@@ -17,6 +17,7 @@ import { useCanvasAPI, Block, Relation } from "../hooks/useCanvasAPI";
 import { useProjectMembers } from "../hooks/useProjectMembers";
 import { useAuthContext } from "../hooks/useAuth";
 import { useProjectPermissions } from "../hooks/useProjectPermissions";
+import ProjectShareDialog from "./ProjectShareDialog";
 import exampleImage from 'figma:asset/f732417d3948b1aee3d2de707001635b53fda24f.png';
 
 interface ProjectDetails {
@@ -30,7 +31,6 @@ interface ProjectDetailPageProps {
   project: ProjectDetails;
   onEdit: () => void;
   onEditProperties: () => void;
-  onShare: () => void;
   onBack: () => void;
 }
 
@@ -61,7 +61,7 @@ interface ProjectTask {
   priority: 'high' | 'medium' | 'low';
 }
 
-export default function ProjectDetailPage({ project, onEdit, onEditProperties, onShare, onBack }: ProjectDetailPageProps) {
+export default function ProjectDetailPage({ project, onEdit, onEditProperties, onBack }: ProjectDetailPageProps) {
   // Log pour déboguer les mises à jour
   useEffect(() => {
     console.log('ProjectDetailPage - Received project:', project);
@@ -83,15 +83,23 @@ export default function ProjectDetailPage({ project, onEdit, onEditProperties, o
   const projectOwner = members.find(m => m.role === 'owner');
   const currentUserMember = user ? members.find(m => m.id === user.id) : null;
   
+  
   // Si c'est un projet de l'utilisateur et qu'on n'a pas encore les membres, 
   // on considère l'utilisateur comme propriétaire par défaut
   const effectiveOwnerId = projectOwner?.id || (project.from === 'myproject' ? user?.id : undefined);
   const effectiveRole = currentUserMember?.role || (project.from === 'myproject' ? 'owner' : undefined);
   
-  const { permissions, canEdit, canManageMembers } = useProjectPermissions(
-    effectiveOwnerId, 
-    effectiveRole as any
-  );
+  
+  // Basic permissions based on role
+  const permissions = {
+    canEdit: project.from === 'myproject' || ['owner', 'admin', 'editor'].includes(currentUserMember?.role || ''),
+    canShare: project.from === 'myproject' || ['owner', 'admin'].includes(currentUserMember?.role || ''),
+  };
+  
+  const canEdit = permissions.canEdit;
+
+  // Pour allMembers, utilisons simplement members pour l'instant
+  const allMembers = members;
 
   useEffect(() => {
     loadProjectData();
@@ -448,16 +456,22 @@ export default function ProjectDetailPage({ project, onEdit, onEditProperties, o
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={onShare}
-              disabled={!permissions.canShare}
-              className={`${!permissions.canShare ? 'opacity-50' : ''}`}
-            >
-              <Share className="w-4 h-4 mr-2" />
-              Partager
-            </Button>
+            <ProjectShareDialog
+              projectId={project.id}
+              projectTitle={project.title}
+              members={allMembers}
+              trigger={
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  disabled={!permissions.canShare}
+                  className={`${!permissions.canShare ? 'opacity-50' : ''}`}
+                >
+                  <Share className="w-4 h-4 mr-2" />
+                  Partager
+                </Button>
+              }
+            />
             <Button 
               variant="ghost" 
               size="sm" 
@@ -551,11 +565,6 @@ export default function ProjectDetailPage({ project, onEdit, onEditProperties, o
                           </AvatarFallback>
                         </Avatar>
                         <span className="text-sm text-muted-foreground">Aucun membre assigné</span>
-                        {canManageMembers && (
-                          <Button variant="ghost" size="sm" onClick={onShare} className="text-xs h-6 px-2 text-blue-600 hover:text-blue-700">
-                            Inviter des membres
-                          </Button>
-                        )}
                       </div>
                     );
                   })()}

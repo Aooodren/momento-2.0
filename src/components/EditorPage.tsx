@@ -1014,18 +1014,6 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Bouton d'invitation */}
-          <EnhancedInviteDialog 
-            projectId={project.id}
-            projectTitle={project.title}
-            trigger={
-              <Button variant="outline" size="sm" className="gap-2">
-                <Users className="w-4 h-4" />
-                Inviter
-              </Button>
-            }
-          />
-          
           {/* Bouton Autolayout Grille */}
           <TooltipProvider>
             <Tooltip>
