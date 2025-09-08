@@ -4,7 +4,7 @@ import MyProjectPage from "./components/MyProjectPage";
 import LikedPage from "./components/LikedPage";
 import ProjectDetailPage from "./components/ProjectDetailPage";
 import EditorPage from "./components/EditorPage";
-import SettingsPage from "./components/SettingsPage";
+import SettingsPage from "./components/SettingsPageNew";
 import SharePage from "./components/SharePage";
 import ProjectEditPage from "./components/ProjectEditPage";
 import AuthPage from "./components/AuthPage";
@@ -14,6 +14,7 @@ import IntegrationsPage from "./components/IntegrationsPage";
 import NotionOAuthCallback from "./components/NotionOAuthCallback";
 import { Loader2 } from "lucide-react";
 import { useAuth, AuthContext } from "./hooks/useAuth";
+import { ThemeProvider } from "./components/ThemeProvider";
 
 type PageType = 'myproject' | 'liked' | 'detail' | 'editor' | 'settings' | 'share' | 'project-edit' | 'invitation' | 'integrations' | 'oauth-callback';
 
@@ -22,6 +23,10 @@ interface ProjectDetails {
   title: string;
   type: string;
   from: 'myproject' | 'liked';
+  description?: string;
+  startDate?: Date;
+  endDate?: Date;
+  tags?: string[];
 }
 
 export default function App() {
@@ -344,30 +349,32 @@ export default function App() {
 
   return (
     <AuthContext.Provider value={auth}>
-      <div className="flex h-screen bg-background">
+      <ThemeProvider>
+        <div className="flex h-screen bg-background">
 
-        {/* Sidebar de navigation */}
-        <NavigationSidebar
-          currentPage={currentPage}
-          onPageChange={navigateToPage}
-          collapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-          selectedProject={selectedProject}
-          onProjectSelect={navigateToProjectFromSidebar}
-          onSettingsClick={navigateToSettings}
-          onProjectTabClose={handleProjectTabClose}
-          isOnProjectPage={isOnProjectPage}
-          previousPage={previousPage}
-        />
+          {/* Sidebar de navigation */}
+          <NavigationSidebar
+            currentPage={currentPage}
+            onPageChange={navigateToPage}
+            collapsed={sidebarCollapsed}
+            onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+            selectedProject={selectedProject}
+            onProjectSelect={navigateToProjectFromSidebar}
+            onSettingsClick={navigateToSettings}
+            onProjectTabClose={handleProjectTabClose}
+            isOnProjectPage={isOnProjectPage}
+            previousPage={previousPage}
+          />
 
-        {/* Contenu principal */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Zone de contenu */}
-          <div className="flex-1 overflow-auto">
-            {renderCurrentPage()}
+          {/* Contenu principal */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Zone de contenu */}
+            <div className="flex-1 overflow-auto">
+              {renderCurrentPage()}
+            </div>
           </div>
         </div>
-      </div>
+      </ThemeProvider>
     </AuthContext.Provider>
   );
 }

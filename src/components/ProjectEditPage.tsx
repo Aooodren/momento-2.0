@@ -18,6 +18,10 @@ interface ProjectDetails {
   title: string;
   type: string;
   from: 'myproject' | 'liked';
+  description?: string;
+  startDate?: Date;
+  endDate?: Date;
+  tags?: string[];
 }
 
 interface ProjectEditPageProps {
@@ -38,10 +42,10 @@ interface ProjectData {
 export default function ProjectEditPage({ project, onBack, onProjectUpdate }: ProjectEditPageProps) {
   const [projectData, setProjectData] = useState<ProjectData>({
     title: project.title,
-    description: "This task focuses on preparing a high-impact visual presentation that showcases the new website design concept for Client X. The goal is to clearly communicate the updated UI direction, design system, and user flow improvements to the client in a concise and engaging format.\n\nThe presentation will include wireframes, visual mockups, user journey maps, and interactive prototypes to demonstrate the enhanced user experience and business value proposition.",
-    startDate: new Date(2025, 5, 3), // June 3, 2025
-    endDate: new Date(2025, 5, 28), // June 28, 2025
-    tags: ["Design", "Client Work"],
+    description: project.description || "This task focuses on preparing a high-impact visual presentation that showcases the new website design concept for Client X. The goal is to clearly communicate the updated UI direction, design system, and user flow improvements to the client in a concise and engaging format.\n\nThe presentation will include wireframes, visual mockups, user journey maps, and interactive prototypes to demonstrate the enhanced user experience and business value proposition.",
+    startDate: project.startDate || new Date(2025, 5, 3), // June 3, 2025
+    endDate: project.endDate || new Date(2025, 5, 28), // June 28, 2025
+    tags: project.tags || ["Design", "Client Work"],
     type: project.type
   });
 
@@ -59,11 +63,15 @@ export default function ProjectEditPage({ project, onBack, onProjectUpdate }: Pr
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Update the project with new data
+      // Update the project with ALL new data
       const updatedProject = {
         ...project,
         title: projectData.title,
-        type: projectData.type
+        type: projectData.type,
+        description: projectData.description,
+        startDate: projectData.startDate,
+        endDate: projectData.endDate,
+        tags: projectData.tags
       };
       
       console.log('ProjectEditPage - Saving project:', updatedProject);
@@ -97,18 +105,19 @@ export default function ProjectEditPage({ project, onBack, onProjectUpdate }: Pr
   };
 
   const getTagColor = (tag: string) => {
-    switch (tag.toLowerCase()) {
-      case 'design':
-        return 'bg-red-50 text-red-700 border-red-200';
-      case 'client work':
-        return 'bg-green-50 text-green-700 border-green-200';
-      case 'development':
-        return 'bg-blue-50 text-blue-700 border-blue-200';
-      case 'marketing':
-        return 'bg-purple-50 text-purple-700 border-purple-200';
-      default:
-        return 'bg-gray-50 text-gray-700 border-gray-200';
-    }
+    // Couleurs prédéfinies pour les tags (même système que ProjectDetailPage)
+    const tagColors = [
+      'bg-red-50 text-red-700 border-red-200',
+      'bg-green-50 text-green-700 border-green-200',
+      'bg-blue-50 text-blue-700 border-blue-200',
+      'bg-yellow-50 text-yellow-700 border-yellow-200',
+      'bg-purple-50 text-purple-700 border-purple-200',
+      'bg-indigo-50 text-indigo-700 border-indigo-200',
+    ];
+    
+    // Utilise l'index du tag dans la liste pour assigner une couleur consistante
+    const tagIndex = projectData.tags.indexOf(tag);
+    return tagColors[tagIndex % tagColors.length] || 'bg-gray-50 text-gray-700 border-gray-200';
   };
 
   return (

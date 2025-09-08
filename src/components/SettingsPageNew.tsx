@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -35,15 +35,13 @@ import {
 } from "lucide-react";
 import { useAuthContext } from "../hooks/useAuth";
 import { useUserPreferences } from "../hooks/useUserPreferences";
-import InvitationDebugInfo from "./InvitationDebugInfo";
-import SupabaseConfigGuide from "./SupabaseConfigGuide";
-import InvitationTestComponent from "./InvitationTestComponent";
+import UserPreferencesTest from "./UserPreferencesTest";
 
 interface SettingsPageProps {
   onBack: () => void;
 }
 
-export default function SettingsPage({ onBack }: SettingsPageProps) {
+export default function SettingsPageNew({ onBack }: SettingsPageProps) {
   const { user, updateProfile, signOut } = useAuthContext();
   const { 
     preferences, 
@@ -106,35 +104,18 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
         bio: preferences.bio
       });
       
-      // Mettre à jour aussi le profil auth si le nom a changé
-      if (updateProfile && user?.name !== preferences.phone) {
-        await updateProfile({
-          name: user?.name || ''
-        });
-      }
-      
       showSuccess('Profil mis à jour avec succès!');
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
     }
   };
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Erreur lors de la déconnexion:', error);
-    }
-  };
-
   const handleChangePassword = async () => {
     if (!currentPassword || !newPassword) {
-      setSuccessMessage('');
       return;
     }
     
     if (newPassword !== confirmPassword) {
-      setSuccessMessage('');
       return;
     }
     
@@ -172,7 +153,7 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
     { id: 'appearance', label: 'Apparence', icon: Monitor },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'security', label: 'Sécurité', icon: Shield },
-    { id: 'invitations', label: 'Invitations', icon: Mail }
+    { id: 'test', label: 'Test', icon: CheckCircle }
   ];
 
   const renderProfileSection = () => (
@@ -180,11 +161,19 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
       <div>
         <h3 className="mb-4">Informations du profil</h3>
         
+        {/* Message de succès */}
+        {successMessage && (
+          <Alert className="mb-4">
+            <CheckCircle className="h-4 w-4" />
+            <AlertDescription>{successMessage}</AlertDescription>
+          </Alert>
+        )}
+        
         {/* Photo de profil */}
         <div className="flex items-center gap-4 mb-6">
           <Avatar className="w-20 h-20">
             <AvatarFallback className="text-lg bg-gradient-to-br from-blue-100 to-indigo-200 text-blue-700">
-              {profileData.name && profileData.name.trim() ? getInitials(profileData.name) : (user?.email ? user.email[0].toUpperCase() : 'U')}
+              {user?.name ? getInitials(user.name) : (user?.email ? user.email[0].toUpperCase() : 'U')}
             </AvatarFallback>
           </Avatar>
           <div className="space-y-2">
@@ -210,8 +199,9 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
             <Label htmlFor="name">Nom complet</Label>
             <Input 
               id="name" 
-              value={profileData.name}
-              onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+              value={user?.name || ''}
+              disabled
+              title="Le nom est géré via le profil d'authentification"
             />
           </div>
           
@@ -223,7 +213,7 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
                 id="email" 
                 type="email"
                 className="pl-10"
-                value={profileData.email}
+                value={user?.email || ''}
                 disabled
                 title="L'email ne peut pas être modifié"
               />
@@ -238,8 +228,8 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
                 id="phone" 
                 type="tel"
                 className="pl-10"
-                value={profileData.phone}
-                onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                value={preferences.phone}
+                onChange={(e) => savePreferences({ phone: e.target.value })}
               />
             </div>
           </div>
@@ -248,8 +238,8 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
             <Label htmlFor="company">Entreprise</Label>
             <Input 
               id="company" 
-              value={profileData.company}
-              onChange={(e) => setProfileData({ ...profileData, company: e.target.value })}
+              value={preferences.company}
+              onChange={(e) => savePreferences({ company: e.target.value })}
             />
           </div>
 
@@ -260,8 +250,8 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
               <Input 
                 id="location" 
                 className="pl-10"
-                value={profileData.location}
-                onChange={(e) => setProfileData({ ...profileData, location: e.target.value })}
+                value={preferences.location}
+                onChange={(e) => savePreferences({ location: e.target.value })}
               />
             </div>
           </div>
@@ -271,8 +261,9 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
             <textarea 
               id="bio"
               className="flex min-h-[80px] w-full rounded-md border border-input bg-input-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              value={profileData.bio}
-              onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
+              value={preferences.bio}
+              onChange={(e) => savePreferences({ bio: e.target.value })}
+              placeholder="Parlez-nous de vous..."
             />
           </div>
         </div>
@@ -280,9 +271,9 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
         <div className="flex justify-end mt-6">
           <Button 
             onClick={handleSaveProfile}
-            disabled={isUpdating}
+            disabled={saving}
           >
-            {isUpdating ? (
+            {saving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Sauvegarde...
@@ -309,7 +300,7 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
           <div className="flex items-center justify-between">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                {darkMode ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                {preferences.theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
                 <span className="font-medium">Mode sombre</span>
               </div>
               <p className="text-sm text-muted-foreground">
@@ -317,8 +308,8 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
               </p>
             </div>
             <Switch 
-              checked={darkMode} 
-              onCheckedChange={setDarkMode}
+              checked={preferences.theme === 'dark'} 
+              onCheckedChange={(checked) => savePreferences({ theme: checked ? 'dark' : 'light' })}
             />
           </div>
 
@@ -330,7 +321,10 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
               <Globe className="w-4 h-4" />
               <span className="font-medium">Langue</span>
             </div>
-            <Select defaultValue="fr">
+            <Select 
+              value={preferences.language} 
+              onValueChange={(value) => savePreferences({ language: value as any })}
+            >
               <SelectTrigger className="w-full max-w-xs">
                 <SelectValue placeholder="Sélectionner une langue" />
               </SelectTrigger>
@@ -348,7 +342,10 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
           {/* Taille de police */}
           <div className="space-y-3">
             <span className="font-medium">Taille de police</span>
-            <Select defaultValue="medium">
+            <Select 
+              value={preferences.fontSize}
+              onValueChange={(value) => savePreferences({ fontSize: value as any })}
+            >
               <SelectTrigger className="w-full max-w-xs">
                 <SelectValue />
               </SelectTrigger>
@@ -370,7 +367,10 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
                 Démarrer avec la sidebar en mode réduit
               </p>
             </div>
-            <Switch />
+            <Switch 
+              checked={preferences.sidebarCollapsed}
+              onCheckedChange={(checked) => savePreferences({ sidebarCollapsed: checked })}
+            />
           </div>
         </div>
       </div>
@@ -395,8 +395,8 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
               </p>
             </div>
             <Switch 
-              checked={notifications.email} 
-              onCheckedChange={(checked) => setNotifications({ ...notifications, email: checked })}
+              checked={preferences.emailNotifications} 
+              onCheckedChange={(checked) => savePreferences({ emailNotifications: checked })}
             />
           </div>
 
@@ -414,8 +414,8 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
               </p>
             </div>
             <Switch 
-              checked={notifications.push} 
-              onCheckedChange={(checked) => setNotifications({ ...notifications, push: checked })}
+              checked={preferences.pushNotifications} 
+              onCheckedChange={(checked) => savePreferences({ pushNotifications: checked })}
             />
           </div>
 
@@ -430,8 +430,8 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
               </p>
             </div>
             <Switch 
-              checked={notifications.updates} 
-              onCheckedChange={(checked) => setNotifications({ ...notifications, updates: checked })}
+              checked={preferences.productUpdates} 
+              onCheckedChange={(checked) => savePreferences({ productUpdates: checked })}
             />
           </div>
 
@@ -446,164 +446,9 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
               </p>
             </div>
             <Switch 
-              checked={notifications.marketing} 
-              onCheckedChange={(checked) => setNotifications({ ...notifications, marketing: checked })}
+              checked={preferences.marketingEmails} 
+              onCheckedChange={(checked) => savePreferences({ marketingEmails: checked })}
             />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderInvitationsSection = () => (
-    <div className="space-y-6">
-      <div>
-        <h3 className="mb-4">Système d'invitations</h3>
-        
-        <div className="space-y-6">
-          {/* Status du système */}
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <CheckCircle className="w-5 h-5 text-green-600" />
-              <span className="font-medium text-green-900">Système d'invitations activé</span>
-            </div>
-            <p className="text-sm text-green-800">
-              Les invitations utilisent maintenant le système Supabase Auth intégré avec envoi d'emails automatique.
-            </p>
-          </div>
-
-          <Separator />
-
-          {/* Configuration des emails */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Mail className="w-4 h-4" />
-              <span className="font-medium">Configuration des emails d'invitation</span>
-            </div>
-            
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-blue-600 font-semibold text-xs">1</span>
-                  </div>
-                  <div>
-                    <p className="font-medium text-blue-900">Templates d'emails</p>
-                    <p className="text-sm text-blue-800">
-                      Les templates d'emails sont configurables dans le dashboard Supabase, section "Authentication" → "Email Templates".
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-blue-600 font-semibold text-xs">2</span>
-                  </div>
-                  <div>
-                    <p className="font-medium text-blue-900">Personnalisation</p>
-                    <p className="text-sm text-blue-800">
-                      Vous pouvez personnaliser le contenu, le design et l'expéditeur des emails d'invitation directement depuis Supabase.
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-blue-600 font-semibold text-xs">3</span>
-                  </div>
-                  <div>
-                    <p className="font-medium text-blue-900">Variables disponibles</p>
-                    <p className="text-sm text-blue-800">
-                      Les emails incluent automatiquement les informations du projet, du rôle et de l'inviteur via les métadonnées utilisateur.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <Button variant="outline" size="sm" className="mt-4">
-              <Globe className="w-4 h-4 mr-2" />
-              Ouvrir le dashboard Supabase
-            </Button>
-          </div>
-
-          <Separator />
-
-          {/* Diagnostic */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="w-4 h-4" />
-              <span className="font-medium">Diagnostic des invitations</span>
-            </div>
-            
-            <InvitationDebugInfo />
-          </div>
-
-          <Separator />
-
-          {/* Informations techniques */}
-          <div className="space-y-3">
-            <span className="font-medium">Informations techniques</span>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-muted/50 rounded-lg p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <CheckCircle className="w-4 h-4 text-green-600" />
-                  <span className="text-sm font-medium">Envoi automatique</span>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Les emails sont envoyés automatiquement par Supabase lors de l'invitation
-                </p>
-              </div>
-              
-              <div className="bg-muted/50 rounded-lg p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <CheckCircle className="w-4 h-4 text-green-600" />
-                  <span className="text-sm font-medium">Expiration automatique</span>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Les liens d'invitation expirent selon la configuration Supabase
-                </p>
-              </div>
-              
-              <div className="bg-muted/50 rounded-lg p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <CheckCircle className="w-4 h-4 text-green-600" />
-                  <span className="text-sm font-medium">Sécurité renforcée</span>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Utilise les tokens sécurisés de Supabase Auth
-                </p>
-              </div>
-              
-              <div className="bg-muted/50 rounded-lg p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <CheckCircle className="w-4 h-4 text-green-600" />
-                  <span className="text-sm font-medium">Gestion des utilisateurs</span>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Création automatique de compte si nécessaire
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Test en temps réel */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <span className="font-medium">Test en temps réel</span>
-            </div>
-            
-            <InvitationTestComponent />
-          </div>
-
-          <Separator />
-
-          {/* Guide de configuration */}
-          <div className="space-y-4">
-            <SupabaseConfigGuide />
           </div>
         </div>
       </div>
@@ -629,6 +474,8 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
                   <Input 
                     id="current-password" 
                     type={showPassword ? "text" : "password"}
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
                   />
                   <Button
                     type="button"
@@ -646,10 +493,21 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
                 <Input 
                   id="new-password" 
                   type={showPassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="confirm-password">Confirmer le mot de passe</Label>
+                <Input 
+                  id="confirm-password" 
+                  type={showPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                 />
               </div>
             </div>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={handleChangePassword}>
               Mettre à jour le mot de passe
             </Button>
           </div>
@@ -660,32 +518,29 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
           <div className="space-y-3">
             <span className="font-medium">Sessions actives</span>
             <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Monitor className="w-4 h-4" />
-                    <span className="font-medium">Session actuelle</span>
-                    <Badge variant="outline" className="text-xs">En cours</Badge>
+              {sessions.map((session) => (
+                <div key={session.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Monitor className="w-4 h-4" />
+                      <span className="font-medium">{session.device}</span>
+                      {session.current && <Badge variant="outline" className="text-xs">En cours</Badge>}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {session.location} • {session.lastActive}
+                    </p>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Chrome sur macOS • Paris, France • Il y a 2 minutes
-                  </p>
+                  {!session.current && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => terminateSession(session.id)}
+                    >
+                      Déconnecter
+                    </Button>
+                  )}
                 </div>
-              </div>
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-4 h-4" />
-                    <span className="font-medium">iPhone</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Safari Mobile • Paris, France • Il y a 2 heures
-                  </p>
-                </div>
-                <Button variant="outline" size="sm">
-                  Déconnecter
-                </Button>
-              </div>
+              ))}
             </div>
           </div>
 
@@ -695,7 +550,7 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
           <div className="space-y-3">
             <span className="font-medium">Données personnelles</span>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={handleExportData}>
                 <Download className="w-4 h-4 mr-2" />
                 Exporter mes données
               </Button>
@@ -718,11 +573,22 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
                       <Label htmlFor="confirm-delete">
                         Tapez "SUPPRIMER" pour confirmer
                       </Label>
-                      <Input id="confirm-delete" placeholder="SUPPRIMER" />
+                      <Input 
+                        id="confirm-delete" 
+                        placeholder="SUPPRIMER" 
+                        value={deleteConfirmText}
+                        onChange={(e) => setDeleteConfirmText(e.target.value)}
+                      />
                     </div>
                     <div className="flex justify-end gap-2">
                       <Button variant="outline">Annuler</Button>
-                      <Button variant="destructive">Supprimer définitivement</Button>
+                      <Button 
+                        variant="destructive"
+                        onClick={handleDeleteAccount}
+                        disabled={deleteConfirmText !== 'SUPPRIMER'}
+                      >
+                        Supprimer définitivement
+                      </Button>
                     </div>
                   </div>
                 </DialogContent>
@@ -730,6 +596,18 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  );
+
+  const renderTestSection = () => (
+    <div className="space-y-6">
+      <div>
+        <h3 className="mb-4">Test des préférences utilisateur</h3>
+        <p className="text-muted-foreground mb-6">
+          Cette section permet de tester le système de préférences en temps réel.
+        </p>
+        <UserPreferencesTest />
       </div>
     </div>
   );
@@ -744,8 +622,8 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
         return renderNotificationsSection();
       case 'security':
         return renderSecuritySection();
-      case 'invitations':
-        return renderInvitationsSection();
+      case 'test':
+        return renderTestSection();
       default:
         return renderProfileSection();
     }

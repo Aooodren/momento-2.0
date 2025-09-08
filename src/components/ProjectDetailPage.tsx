@@ -10,13 +10,14 @@ import {
   AlertTriangle, CheckCircle, Clock, TrendingUp,
   Lightbulb, Target, Layers, Network, Activity,
   ExternalLink, Download, Star, Eye, Crown, Shield, Edit, EyeIcon, Loader2,
-  MousePointer, Zap
+  MousePointer, Zap, Upload, Folder, History, BarChart3, Users, Copy
 } from "lucide-react";
 
 import { useCanvasAPI, Block, Relation } from "../hooks/useCanvasAPI";
 import { useProjectMembers } from "../hooks/useProjectMembers";
 import { useAuthContext } from "../hooks/useAuth";
 import { useProjectPermissions } from "../hooks/useProjectPermissions";
+import { useProjectDetail } from "../hooks/useProjectDetail";
 import exampleImage from 'figma:asset/f732417d3948b1aee3d2de707001635b53fda24f.png';
 
 interface ProjectDetails {
@@ -24,6 +25,10 @@ interface ProjectDetails {
   title: string;
   type: string;
   from: 'myproject' | 'liked';
+  description?: string;
+  startDate?: Date;
+  endDate?: Date;
+  tags?: string[];
 }
 
 interface ProjectDetailPageProps {
@@ -78,6 +83,19 @@ export default function ProjectDetailPage({ project, onEdit, onEditProperties, o
   const { getBlocks, getRelations } = useCanvasAPI();
   const { members, loading: membersLoading, getMembers } = useProjectMembers(project.id);
   const { user } = useAuthContext();
+  
+  // Hook pour les données complètes du projet (fichiers, analytics, activités)
+  const { 
+    files, 
+    activities, 
+    analytics, 
+    uploadFile, 
+    downloadFile, 
+    deleteFile, 
+    exportProject,
+    duplicateProject,
+    loading: projectDetailLoading 
+  } = useProjectDetail(project.id);
   
   // Get project owner ID and user role from members
   const projectOwner = members.find(m => m.role === 'owner');
@@ -569,9 +587,17 @@ export default function ProjectDetailPage({ project, onEdit, onEditProperties, o
                   <span className="text-sm text-muted-foreground">Date</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
-                  <span>June 3, 2025</span>
+                  <span>{project.startDate?.toLocaleDateString('fr-FR', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  }) || 'June 3, 2025'}</span>
                   <span className="text-muted-foreground">→</span>
-                  <span>June 28, 2025</span>
+                  <span>{project.endDate?.toLocaleDateString('fr-FR', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  }) || 'June 28, 2025'}</span>
                 </div>
               </div>
 
@@ -581,15 +607,27 @@ export default function ProjectDetailPage({ project, onEdit, onEditProperties, o
                   <Tag className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">Tags</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-                    <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
-                    Design
-                  </Badge>
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                    <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                    Client Work
-                  </Badge>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {(project.tags || ['Design', 'Client Work']).map((tag, index) => {
+                    // Couleurs prédéfinies pour les tags
+                    const tagColors = [
+                      'bg-red-50 text-red-700 border-red-200 bg-red-500',
+                      'bg-green-50 text-green-700 border-green-200 bg-green-500',
+                      'bg-blue-50 text-blue-700 border-blue-200 bg-blue-500',
+                      'bg-yellow-50 text-yellow-700 border-yellow-200 bg-yellow-500',
+                      'bg-purple-50 text-purple-700 border-purple-200 bg-purple-500',
+                      'bg-indigo-50 text-indigo-700 border-indigo-200 bg-indigo-500',
+                    ];
+                    const colorClass = tagColors[index % tagColors.length];
+                    const [bgClass, textClass, borderClass, dotClass] = colorClass.split(' ');
+                    
+                    return (
+                      <Badge key={tag} variant="outline" className={`${bgClass} ${textClass} ${borderClass}`}>
+                        <span className={`w-2 h-2 ${dotClass} rounded-full mr-2`}></span>
+                        {tag}
+                      </Badge>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -602,14 +640,8 @@ export default function ProjectDetailPage({ project, onEdit, onEditProperties, o
               <span className="text-sm text-muted-foreground text-[14px] text-[13px] font-normal font-bold">Description</span>
             </div>
             <div className="text-sm text-muted-foreground leading-relaxed">
-              <p className="mb-4">
-                This task focuses on preparing a high-impact visual presentation that showcases the new website design 
-                concept for Client X. The goal is to clearly communicate the updated UI direction, design system, and user flow 
-                improvements to the client in a concise and engaging format.
-              </p>
-              <p>
-                The presentation will include wireframes, visual mockups, user journey maps, and interactive prototypes 
-                to demonstrate the enhanced user experience and business value proposition.
+              <p className="whitespace-pre-wrap">
+                {project.description || "This task focuses on preparing a high-impact visual presentation that showcases the new website design concept for Client X. The goal is to clearly communicate the updated UI direction, design system, and user flow improvements to the client in a concise and engaging format.\n\nThe presentation will include wireframes, visual mockups, user journey maps, and interactive prototypes to demonstrate the enhanced user experience and business value proposition."}
               </p>
             </div>
           </div>
@@ -866,7 +898,194 @@ export default function ProjectDetailPage({ project, onEdit, onEditProperties, o
           )}
         </div>
 
+          {/* Section Fichiers */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Folder className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Fichiers</span>
+                <Badge variant="outline" className="text-xs">{files.length}</Badge>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.multiple = true;
+                    input.onchange = async (e) => {
+                      const files = (e.target as HTMLInputElement).files;
+                      if (files) {
+                        for (const file of Array.from(files)) {
+                          try {
+                            await uploadFile(file);
+                          } catch (err) {
+                            console.error('Erreur upload:', err);
+                          }
+                        }
+                      }
+                    };
+                    input.click();
+                  }}
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Ajouter
+                </Button>
+              </div>
+            </div>
 
+            <div className="border rounded-lg">
+              {files.length > 0 ? (
+                <div className="divide-y">
+                  {files.map((file) => (
+                    <div key={file.id} className="flex items-center justify-between p-3 hover:bg-muted/50">
+                      <div className="flex items-center gap-3">
+                        <FileText className="w-4 h-4 text-muted-foreground" />
+                        <div>
+                          <div className="text-sm font-medium">{file.filename}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {(file.file_size / 1024).toFixed(1)} KB • {new Date(file.uploaded_at).toLocaleDateString('fr-FR')}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => downloadFile(file.id)}
+                        >
+                          <Download className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteFile(file.id)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-8 text-center text-muted-foreground">
+                  <Folder className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">Aucun fichier pour le moment</p>
+                  <p className="text-xs">Glissez des fichiers ici ou cliquez sur "Ajouter"</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Section Analytics */}
+          {analytics && (
+            <div className="mb-8">
+              <div className="flex items-center gap-2 mb-4">
+                <BarChart3 className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Analytics</span>
+              </div>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="p-3 border rounded-lg text-center">
+                  <div className="text-2xl font-bold text-blue-600">{analytics.total_blocks}</div>
+                  <div className="text-xs text-muted-foreground">Blocs</div>
+                </div>
+                <div className="p-3 border rounded-lg text-center">
+                  <div className="text-2xl font-bold text-green-600">{analytics.total_relations}</div>
+                  <div className="text-xs text-muted-foreground">Relations</div>
+                </div>
+                <div className="p-3 border rounded-lg text-center">
+                  <div className="text-2xl font-bold text-purple-600">{analytics.contributors_count}</div>
+                  <div className="text-xs text-muted-foreground">Contributeurs</div>
+                </div>
+                <div className="p-3 border rounded-lg text-center">
+                  <div className="text-2xl font-bold text-orange-600">
+                    {analytics.complexity_score}%
+                  </div>
+                  <div className="text-xs text-muted-foreground">Complexité</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Section Activités récentes */}
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <History className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Activité récente</span>
+            </div>
+            
+            <div className="border rounded-lg">
+              {activities.length > 0 ? (
+                <div className="divide-y">
+                  {activities.slice(0, 5).map((activity) => (
+                    <div key={activity.id} className="flex items-start gap-3 p-3">
+                      <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Activity className="w-3 h-3 text-blue-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm">{activity.description}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {activity.user_profile?.full_name || 'Utilisateur'} • {new Date(activity.created_at).toLocaleDateString('fr-FR')}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-8 text-center text-muted-foreground">
+                  <History className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">Aucune activité récente</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Section Export */}
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <Download className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Export</span>
+            </div>
+            
+            <div className="flex flex-wrap gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportProject('json')}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                JSON
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportProject('pdf')}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                PDF
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportProject('png')}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Image
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => duplicateProject()}
+              >
+                <Copy className="w-4 h-4 mr-2" />
+                Dupliquer
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

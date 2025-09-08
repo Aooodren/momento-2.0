@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { ArrowLeft, Plus, Save, AlertCircle, Loader2, RefreshCw, ChevronDown, Sparkles, Layers, Eye, EyeOff, Play } from 'lucide-react';
+import { ArrowLeft, Plus, Save, AlertCircle, Loader2, RefreshCw, ChevronDown, Sparkles, Layers, Eye, EyeOff, Play, Users } from 'lucide-react';
 import { Button } from './ui/button';
 import { Alert, AlertDescription } from './ui/alert';
 import { Badge } from './ui/badge';
@@ -30,6 +30,7 @@ import { useSupabaseProjects } from '../hooks/useSupabaseProjects';
 import { useProjectPermissions } from '../hooks/useProjectPermissions';
 import { useProjectMembers } from '../hooks/useProjectMembers';
 import { useAuthContext } from '../hooks/useAuth';
+import { useRealtimeCollaboration, CollaboratorCursor, CollaboratorSelection } from '../hooks/useRealtimeCollaboration';
 import { AdvancedCanvasBlock } from './AdvancedCanvasBlock';
 import { LogicBlock } from './LogicBlock';
 import ClaudeBlock from './ClaudeBlock';
@@ -38,6 +39,9 @@ import ClaudeNotionBlock from './ClaudeNotionBlock';
 import WorkflowControlPanel from './WorkflowControlPanel';
 import AdvancedBlockEditDialog from './AdvancedBlockEditDialog';
 import LogicBlockEditDialog from './LogicBlockEditDialog';
+import CollaboratorCursors from './CollaboratorCursors';
+import CollaborationPanel from './CollaborationPanel';
+import EnhancedInviteDialog from './EnhancedInviteDialog';
 
 interface ProjectDetails {
   id: string;
@@ -113,10 +117,25 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
   // Hooks pour les membres et permissions
   const { user } = useAuthContext();
   const { members } = useProjectMembers(project.id);
+  const canvasRef = useRef<HTMLDivElement>(null);
   
   // Get project owner and user role
   const projectOwner = members.find(m => m.role === 'owner');
   const currentUserMember = user ? members.find(m => m.id === user.id) : null;
+
+  // Hook pour la collaboration temps réel
+  const {
+    cursors,
+    selections,
+    activities,
+    connectedUsers,
+    isConnected,
+    broadcastCanvasActivity,
+    updateSelection
+  } = useRealtimeCollaboration({ 
+    projectId: project.id,
+    canvasRef 
+  });
   const {} = useProjectPermissions(
     projectOwner?.id, 
     currentUserMember?.role as any
@@ -573,6 +592,9 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
 
         setNodes((nds) => [...nds, newNode]);
         setBlocks((blocks) => [...blocks, claudeBlock]);
+        
+        // Diffuser l'activité de création
+        broadcastCanvasActivity('node_created', claudeBlock.title);
       }
     } catch (err) {
       console.error('Erreur création bloc Claude:', err);
@@ -745,6 +767,10 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
 
         // Nettoyer les updates de position
         positionUpdatesRef.current.delete(blockId);
+        
+        // Diffuser l'activité de suppression
+        const deletedBlock = blocks.find(b => b.id === blockId);
+        broadcastCanvasActivity('node_deleted', deletedBlock?.title || 'Bloc');
         
         console.log(`EditorPage - Block ${blockId} deleted successfully`);
       }
@@ -921,6 +947,29 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
           />
         </div>
       )}
+
+      {/* Panneau de collaboration (côté droit) */}
+      <div className="w-80 bg-white border-l border-gray-200 flex-shrink-0 order-last">
+        <div className="p-4 h-full flex flex-col gap-4">
+          <CollaborationPanel
+            connectedUsers={connectedUsers}
+            activities={activities}
+            isConnected={isConnected}
+            onInviteClick={() => {}}
+          />
+          
+          <EnhancedInviteDialog
+            projectId={project.id}
+            projectTitle={project.title}
+            trigger={
+              <Button variant="outline" size="sm" className="w-full">
+                <Users className="w-4 h-4 mr-2" />
+                Inviter un collaborateur
+              </Button>
+            }
+          />
+        </div>
+      </div>
       
       {/* Contenu principal */}
       <div className="flex-1 flex flex-col">
@@ -965,6 +1014,18 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Bouton d'invitation */}
+          <EnhancedInviteDialog 
+            projectId={project.id}
+            projectTitle={project.title}
+            trigger={
+              <Button variant="outline" size="sm" className="gap-2">
+                <Users className="w-4 h-4" />
+                Inviter
+              </Button>
+            }
+          />
+          
           {/* Bouton Autolayout Grille */}
           <TooltipProvider>
             <Tooltip>
@@ -1217,7 +1278,10 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
       )}
 
       {/* Canvas ReactFlow */}
-      <div className="flex-1 relative">
+      <div 
+        className="flex-1 relative"
+        ref={canvasRef}
+      >
         {isLoading ? (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
             <div className="flex items-center gap-3 text-gray-600">
@@ -1226,24 +1290,39 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
             </div>
           </div>
         ) : (
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onNodeDragStop={handleNodeDragStop}
-            nodeTypes={nodeTypes}
-            fitView
-            fitViewOptions={{ padding: 0.2 }}
-            defaultEdgeOptions={{
-              type: 'smoothstep',
-              animated: true,
-              style: { stroke: '#3b82f6', strokeWidth: 2 },
-            }}
-            className="relative"
-            style={{ zIndex: 1 }}
-          >
+          <>
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              onNodeDragStop={handleNodeDragStop}
+              nodeTypes={nodeTypes}
+              fitView
+              fitViewOptions={{ padding: 0.2 }}
+              defaultEdgeOptions={{
+                type: 'smoothstep',
+                animated: true,
+                style: { stroke: '#3b82f6', strokeWidth: 2 },
+              }}
+              className="relative"
+              style={{ zIndex: 1 }}
+              onNodeSelectionChange={(nodes) => {
+                const selectedNode = nodes[0];
+                if (selectedNode) {
+                  const nodeBounds = {
+                    x: selectedNode.position.x,
+                    y: selectedNode.position.y,
+                    width: selectedNode.width || 200,
+                    height: selectedNode.height || 100
+                  };
+                  updateSelection(selectedNode.id, nodeBounds);
+                } else {
+                  updateSelection();
+                }
+              }}
+            >
             <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
             
             <Controls 
@@ -1272,6 +1351,13 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
               }}
             />
           </ReactFlow>
+          
+          {/* Curseurs des collaborateurs */}
+          <CollaboratorCursors 
+            cursors={cursors as CollaboratorCursor[]} 
+            selections={selections as CollaboratorSelection[]} 
+          />
+          </>
         )}
       </div>
 
