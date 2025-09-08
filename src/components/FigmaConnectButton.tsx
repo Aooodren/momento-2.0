@@ -13,7 +13,7 @@ interface FigmaConnectButtonProps {
 }
 
 // Configuration OAuth Figma
-const FIGMA_CLIENT_ID = process.env.REACT_APP_FIGMA_CLIENT_ID || 'figma-demo-client-id';
+const FIGMA_CLIENT_ID = import.meta.env.VITE_FIGMA_CLIENT_ID || 'figma-demo-client-id';
 const FIGMA_REDIRECT_URI = `${window.location.origin}/integrations/callback/figma`;
 const FIGMA_SCOPES = 'file_read';
 

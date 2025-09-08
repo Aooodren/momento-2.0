@@ -12,9 +12,9 @@ import {
 } from "lucide-react";
 import { useSupabaseIntegrations } from "../hooks/useSupabaseIntegrations";
 import NotionConnectButton from "./NotionConnectButton";
-import ClaudeConnectButton from "./ClaudeConnectButton";
-import FigmaConnectButton from "./FigmaConnectButton";
-import IntegrationImportDialog from "./IntegrationImportDialog";
+// import ClaudeConnectButton from "./ClaudeConnectButton";
+// import FigmaConnectButton from "./FigmaConnectButton";
+// import IntegrationImportDialog from "./IntegrationImportDialog";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
@@ -43,10 +43,10 @@ interface IntegrationsPageProps {
 
 export default function IntegrationsPage({ onBack }: IntegrationsPageProps) {
   const [selectedTool, setSelectedTool] = useState<IntegrationTool | null>(null);
-  const [importDialog, setImportDialog] = useState<{
-    open: boolean;
-    type: 'claude' | 'figma' | 'notion' | null;
-  }>({ open: false, type: null });
+  // const [importDialog, setImportDialog] = useState<{
+  //   open: boolean;
+  //   type: 'claude' | 'figma' | 'notion' | null;
+  // }>({ open: false, type: null });
   const { 
     integrations, 
     connectIntegration, 
@@ -139,33 +139,33 @@ export default function IntegrationsPage({ onBack }: IntegrationsPageProps) {
     console.error('Erreur connexion Notion:', error);
   };
 
-  const handleClaudeConnect = () => {
-    console.log('Claude connecté avec succès');
-    refetch();
-  };
+  // const handleClaudeConnect = () => {
+  //   console.log('Claude connecté avec succès');
+  //   refetch();
+  // };
 
-  const handleClaudeError = (error: string) => {
-    console.error('Erreur connexion Claude:', error);
-  };
+  // const handleClaudeError = (error: string) => {
+  //   console.error('Erreur connexion Claude:', error);
+  // };
 
-  const handleFigmaConnect = () => {
-    console.log('Figma connecté avec succès');
-    refetch();
-  };
+  // const handleFigmaConnect = () => {
+  //   console.log('Figma connecté avec succès');
+  //   refetch();
+  // };
 
-  const handleFigmaError = (error: string) => {
-    console.error('Erreur connexion Figma:', error);
-  };
+  // const handleFigmaError = (error: string) => {
+  //   console.error('Erreur connexion Figma:', error);
+  // };
 
-  const handleImport = (toolId: 'claude' | 'figma' | 'notion') => {
-    setImportDialog({ open: true, type: toolId });
-  };
+  // const handleImport = (toolId: 'claude' | 'figma' | 'notion') => {
+  //   setImportDialog({ open: true, type: toolId });
+  // };
 
-  const handleImportComplete = (data: any) => {
-    console.log('Données importées:', data);
-    // Ici vous pouvez traiter les données importées
-    // Par exemple, les ajouter au projet actuel ou créer un nouveau projet
-  };
+  // const handleImportComplete = (data: any) => {
+  //   console.log('Données importées:', data);
+  //   // Ici vous pouvez traiter les données importées
+  //   // Par exemple, les ajouter au projet actuel ou créer un nouveau projet
+  // };
 
   const handleDisconnect = async (toolId: string) => {
     try {
@@ -375,14 +375,14 @@ export default function IntegrationsPage({ onBack }: IntegrationsPageProps) {
                           <div className="flex items-center gap-2 ml-4">
                             {tool.status === 'connected' ? (
                               <>
-                                <Button
+                                {/* <Button
                                   variant="outline"
                                   size="sm"
                                   onClick={() => handleImport(tool.id as 'claude' | 'figma' | 'notion')}
                                 >
                                   <Download className="h-4 w-4 mr-2" />
                                   Importer
-                                </Button>
+                                </Button> */}
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -407,17 +407,31 @@ export default function IntegrationsPage({ onBack }: IntegrationsPageProps) {
                                   className="min-w-[100px]"
                                 />
                               ) : tool.id === 'claude' ? (
-                                <ClaudeConnectButton
-                                  onConnect={handleClaudeConnect}
-                                  onError={handleClaudeError}
+                                <Button
+                                  onClick={() => handleConnect(tool)}
+                                  disabled={tool.status === 'connecting' || !tool.isAvailable}
                                   className="min-w-[100px]"
-                                />
+                                >
+                                  {tool.status === 'connecting' ? (
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  ) : (
+                                    <Link2 className="h-4 w-4 mr-2" />
+                                  )}
+                                  {tool.status === 'connecting' ? 'Connexion...' : 'Connecter'}
+                                </Button>
                               ) : tool.id === 'figma' ? (
-                                <FigmaConnectButton
-                                  onConnect={handleFigmaConnect}
-                                  onError={handleFigmaError}
+                                <Button
+                                  onClick={() => handleConnect(tool)}
+                                  disabled={tool.status === 'connecting' || !tool.isAvailable}
                                   className="min-w-[100px]"
-                                />
+                                >
+                                  {tool.status === 'connecting' ? (
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  ) : (
+                                    <Link2 className="h-4 w-4 mr-2" />
+                                  )}
+                                  {tool.status === 'connecting' ? 'Connexion...' : 'Connecter'}
+                                </Button>
                               ) : (
                                 <Button
                                   onClick={() => handleConnect(tool)}
@@ -546,12 +560,12 @@ export default function IntegrationsPage({ onBack }: IntegrationsPageProps) {
       </Dialog>
 
       {/* Dialog d'import */}
-      <IntegrationImportDialog
+      {/* <IntegrationImportDialog
         open={importDialog.open}
         onOpenChange={(open) => setImportDialog({ ...importDialog, open })}
         integrationType={importDialog.type!}
         onImportComplete={handleImportComplete}
-      />
+      /> */}
 
     </div>
   );
