@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { ArrowLeft, Plus, Save, AlertCircle, Loader2, RefreshCw, ChevronDown, Sparkles, Layers, Eye, EyeOff, Play, Users } from 'lucide-react';
+import { ArrowLeft, Plus, Save, AlertCircle, Loader2, RefreshCw, ChevronDown, Sparkles, Layers, Eye, EyeOff, Play, Users, Zap } from 'lucide-react';
 import { Button } from './ui/button';
 import { Alert, AlertDescription } from './ui/alert';
 import { Badge } from './ui/badge';
@@ -36,6 +36,7 @@ import ClaudeBlock from './ClaudeBlock';
 import ClaudeFigmaBlock from './ClaudeFigmaBlock';
 import ClaudeNotionBlock from './ClaudeNotionBlock';
 import WorkflowControlPanel from './WorkflowControlPanel';
+import WorkflowCanvas from './WorkflowCanvas';
 import AdvancedBlockEditDialog from './AdvancedBlockEditDialog';
 import LogicBlockEditDialog from './LogicBlockEditDialog';
 import CollaboratorCursors from './CollaboratorCursors';
@@ -89,6 +90,7 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
   
   // États pour le panneau de workflow
   const [showWorkflowPanel, setShowWorkflowPanel] = useState(false);
+  const [workflowMode, setWorkflowMode] = useState(false);
 
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const layoutInfoTimeoutRef = useRef<NodeJS.Timeout>();
@@ -1084,6 +1086,17 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
             </Badge>
           </Button>
 
+          {/* Bouton Mode Workflow */}
+          <Button 
+            variant={workflowMode ? "default" : "outline"} 
+            size="sm" 
+            className="gap-2"
+            onClick={() => setWorkflowMode(!workflowMode)}
+          >
+            <Zap className="w-4 h-4" />
+            {workflowMode ? "Mode Canvas" : "Mode Workflow"}
+          </Button>
+
           {/* Bouton Calques */}
           <DropdownMenu open={showLayersPanel} onOpenChange={setShowLayersPanel}>
             <DropdownMenuTrigger asChild>
@@ -1293,6 +1306,14 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
               <span>Chargement du canvas...</span>
             </div>
           </div>
+        ) : workflowMode ? (
+          <WorkflowCanvas 
+            projectId={project.id}
+            onSave={(workflowBlocks, connections) => {
+              console.log('Workflow sauvegardé:', { workflowBlocks, connections });
+            }}
+            className="h-full w-full"
+          />
         ) : (
           <>
             <ReactFlow
