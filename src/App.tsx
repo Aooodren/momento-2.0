@@ -138,7 +138,9 @@ export default function App() {
 
   // Mise à jour du projet sélectionné
   const handleProjectUpdate = (updatedProject: ProjectDetails) => {
-    setSelectedProject(updatedProject);
+    console.log('App - Updating project:', updatedProject);
+    // Force une nouvelle référence d'objet pour déclencher le re-render
+    setSelectedProject({ ...updatedProject });
   };
 
   // Navigation vers les réglages

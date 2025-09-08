@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
@@ -66,6 +66,7 @@ export default function ProjectEditPage({ project, onBack, onProjectUpdate }: Pr
         type: projectData.type
       };
       
+      console.log('ProjectEditPage - Saving project:', updatedProject);
       onProjectUpdate(updatedProject);
       setIsModified(false);
       

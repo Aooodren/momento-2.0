@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -62,6 +62,10 @@ interface ProjectTask {
 }
 
 export default function ProjectDetailPage({ project, onEdit, onEditProperties, onShare, onBack }: ProjectDetailPageProps) {
+  // Log pour déboguer les mises à jour
+  useEffect(() => {
+    console.log('ProjectDetailPage - Received project:', project);
+  }, [project]);
   const isLiked = project.from === 'liked';
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [relations, setRelations] = useState<Relation[]>([]);
