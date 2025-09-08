@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Card } from "./ui/card";
 import ProjectThumbnail from "./ProjectThumbnail";
 import ProjectContextMenu from "./ProjectContextMenu";
@@ -8,12 +8,17 @@ import { Plus, Loader2, AlertCircle, RefreshCw, Eye, Edit3, Share2 } from "lucid
 import { Alert, AlertDescription } from "./ui/alert";
 import { Badge } from "./ui/badge";
 import ShareProjectDialog from "./ShareProjectDialog";
+import ProjectCreateDialog from "./ProjectCreateDialog";
 
 interface ProjectDetails {
   id: string; // Changed to string
   title: string;
   type: string;
   from: 'myproject' | 'liked';
+  description?: string;
+  startDate?: Date;
+  endDate?: Date;
+  tags?: string[];
 }
 
 interface MyProjectPageProps {
@@ -45,13 +50,26 @@ export default function MyProjectPage({ onProjectSelect }: MyProjectPageProps) {
     });
   };
 
-  const handleCreateProject = async () => {
+  const handleCreateProject = async (projectData: {
+    title: string;
+    description: string;
+    type: string;
+    startDate?: Date;
+    endDate?: Date;
+    tags: string[];
+  }) => {
     setIsCreatingProject(true);
     try {
       await createProject({
-        title: "untitled1",
-        description: "Un nouveau projet créé avec Supabase",
-        type: "canvas"
+        title: projectData.title,
+        description: projectData.description,
+        type: projectData.type
+      });
+      // TODO: Sauvegarder les dates et tags dans une table séparée ou étendre le modèle
+      console.log('Project metadata to save separately:', {
+        startDate: projectData.startDate,
+        endDate: projectData.endDate,
+        tags: projectData.tags
       });
     } catch (err) {
       console.error('Erreur lors de la création du projet:', err);
@@ -115,18 +133,22 @@ export default function MyProjectPage({ onProjectSelect }: MyProjectPageProps) {
                 <RefreshCw className="h-4 w-4" />
                 Actualiser
               </Button>
-              <Button 
-                onClick={handleCreateProject}
-                disabled={isCreatingProject}
-                className="gap-2"
-              >
-                {isCreatingProject ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Plus className="h-4 w-4" />
-                )}
-                Nouveau projet
-              </Button>
+              <ProjectCreateDialog 
+                onProjectCreate={handleCreateProject}
+                trigger={
+                  <Button 
+                    disabled={isCreatingProject}
+                    className="gap-2"
+                  >
+                    {isCreatingProject ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Plus className="h-4 w-4" />
+                    )}
+                    Nouveau projet
+                  </Button>
+                }
+              />
             </div>
           </div>
         </div>

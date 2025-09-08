@@ -25,6 +25,10 @@ interface ProjectDetails {
   title: string;
   type: string;
   from: 'myproject' | 'liked';
+  description?: string;
+  startDate?: Date;
+  endDate?: Date;
+  tags?: string[];
 }
 
 interface ProjectDetailPageProps {
@@ -578,9 +582,27 @@ export default function ProjectDetailPage({ project, onEdit, onEditProperties, o
                   <span className="text-sm text-muted-foreground">Date</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
-                  <span>June 3, 2025</span>
+                  <span>
+                    {project.startDate ? 
+                      project.startDate.toLocaleDateString('fr-FR', { 
+                        day: 'numeric', 
+                        month: 'long', 
+                        year: 'numeric' 
+                      }) : 
+                      'June 3, 2025'
+                    }
+                  </span>
                   <span className="text-muted-foreground">→</span>
-                  <span>June 28, 2025</span>
+                  <span>
+                    {project.endDate ? 
+                      project.endDate.toLocaleDateString('fr-FR', { 
+                        day: 'numeric', 
+                        month: 'long', 
+                        year: 'numeric' 
+                      }) : 
+                      'June 28, 2025'
+                    }
+                  </span>
                 </div>
               </div>
 
@@ -591,14 +613,37 @@ export default function ProjectDetailPage({ project, onEdit, onEditProperties, o
                   <span className="text-sm text-muted-foreground">Tags</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-                    <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
-                    Design
-                  </Badge>
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                    <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                    Client Work
-                  </Badge>
+                  {(project.tags && project.tags.length > 0) ? (
+                    project.tags.map((tag, index) => {
+                      const tagColors = [
+                        'bg-red-50 text-red-700 border-red-200',
+                        'bg-green-50 text-green-700 border-green-200',
+                        'bg-blue-50 text-blue-700 border-blue-200',
+                        'bg-yellow-50 text-yellow-700 border-yellow-200',
+                        'bg-purple-50 text-purple-700 border-purple-200',
+                        'bg-indigo-50 text-indigo-700 border-indigo-200',
+                      ];
+                      const colorClass = tagColors[index % tagColors.length];
+                      
+                      return (
+                        <Badge key={tag} variant="outline" className={colorClass}>
+                          <span className="w-2 h-2 bg-current rounded-full mr-2 opacity-60"></span>
+                          {tag}
+                        </Badge>
+                      );
+                    })
+                  ) : (
+                    <>
+                      <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                        <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                        Design
+                      </Badge>
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                        <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                        Client Work
+                      </Badge>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -611,15 +656,25 @@ export default function ProjectDetailPage({ project, onEdit, onEditProperties, o
               <span className="text-sm text-muted-foreground font-medium">Description</span>
             </div>
             <div className="text-sm text-muted-foreground leading-relaxed">
-              <p className="mb-4">
-                This task focuses on preparing a high-impact visual presentation that showcases the new website design 
-                concept for Client X. The goal is to clearly communicate the updated UI direction, design system, and user flow 
-                improvements to the client in a concise and engaging format.
-              </p>
-              <p>
-                The presentation will include wireframes, visual mockups, user journey maps, and interactive prototypes 
-                to demonstrate the enhanced user experience and business value proposition.
-              </p>
+              {project.description ? (
+                project.description.split('\n\n').map((paragraph, index) => (
+                  <p key={index} className={index > 0 ? 'mt-4' : ''}>
+                    {paragraph}
+                  </p>
+                ))
+              ) : (
+                <>
+                  <p className="mb-4">
+                    This task focuses on preparing a high-impact visual presentation that showcases the new website design 
+                    concept for Client X. The goal is to clearly communicate the updated UI direction, design system, and user flow 
+                    improvements to the client in a concise and engaging format.
+                  </p>
+                  <p>
+                    The presentation will include wireframes, visual mockups, user journey maps, and interactive prototypes 
+                    to demonstrate the enhanced user experience and business value proposition.
+                  </p>
+                </>
+              )}
             </div>
           </div>
 

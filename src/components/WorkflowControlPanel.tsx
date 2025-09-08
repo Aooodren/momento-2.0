@@ -1,35 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Node, Edge } from 'reactflow';
 import {
   Play,
   Pause,
-  Square,
-  RotateCcw,
-  Clock,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
-  Eye,
-  Download,
-  Settings,
-  ChevronDown,
-  ChevronRight,
-  Loader2
+  Edit3,
+  Check,
+  X
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Badge } from './ui/badge';
+import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
-import { Progress } from './ui/progress';
-import { Separator } from './ui/separator';
-import { ScrollArea } from './ui/scroll-area';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import { Input } from './ui/input';
+import { Textarea } from './ui/textarea';
 import { cn } from './ui/utils';
-import { useWorkflowEngine, type WorkflowExecution, type WorkflowStep } from '../hooks/useWorkflowEngine';
+import { useWorkflowEngine } from '../hooks/useWorkflowEngine';
 
 interface WorkflowControlPanelProps {
   nodes: Node[];
   edges: Edge[];
   onNodeStatusChange?: (nodeId: string, status: string) => void;
+  onHighlightNodes?: (nodeIds: string[]) => void;
   className?: string;
 }
 
@@ -37,65 +26,91 @@ export default function WorkflowControlPanel({
   nodes,
   edges,
   onNodeStatusChange,
+  onHighlightNodes,
   className
 }: WorkflowControlPanelProps) {
-  const [selectedExecution, setSelectedExecution] = useState<string | null>(null);
-  const [showExecutionDetails, setShowExecutionDetails] = useState(false);
-  const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set());
+  const [workflowName, setWorkflowName] = useState('Mon Workflow');
+  const [workflowDescription, setWorkflowDescription] = useState('Description du workflow');
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const descriptionTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const {
-    executions,
     isExecuting,
-    currentExecution,
     createExecution,
     executeWorkflow,
     pauseExecution,
     resumeExecution,
-    stopExecution,
-    getExecutionStatus,
-    getExecutionData
+    stopExecution
   } = useWorkflowEngine();
 
-  // Calculer les statistiques du workflow
-  const workflowStats = React.useMemo(() => {
-    const totalNodes = nodes.length;
-    const claudeNodes = nodes.filter(n => n.type?.includes('claude')).length;
-    const dataNodes = nodes.filter(n => n.type === 'figma' || n.type === 'notion').length;
-    
-    return {
-      totalNodes,
-      claudeNodes,
-      dataNodes,
-      connections: edges.length
-    };
-  }, [nodes, edges]);
+  // Focus sur les champs d'édition
+  useEffect(() => {
+    if (isEditingName && nameInputRef.current) {
+      nameInputRef.current.focus();
+      nameInputRef.current.select();
+    }
+  }, [isEditingName]);
 
-  // Obtenir l'exécution sélectionnée
-  const currentExecutionData = selectedExecution 
-    ? executions.find(e => e.id === selectedExecution)
-    : null;
+  useEffect(() => {
+    if (isEditingDescription && descriptionTextareaRef.current) {
+      descriptionTextareaRef.current.focus();
+      descriptionTextareaRef.current.select();
+    }
+  }, [isEditingDescription]);
 
-  // Calculer le progrès de l'exécution
-  const calculateProgress = (execution: WorkflowExecution): number => {
-    if (execution.steps.length === 0) return 0;
-    const completedSteps = execution.steps.filter(s => s.status === 'completed').length;
-    return (completedSteps / execution.steps.length) * 100;
+  // Gérer l'édition du nom
+  const handleNameDoubleClick = () => {
+    setIsEditingName(true);
+  };
+
+  const handleNameSubmit = () => {
+    setIsEditingName(false);
+  };
+
+  const handleNameCancel = () => {
+    setIsEditingName(false);
+  };
+
+  const handleNameKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleNameSubmit();
+    } else if (e.key === 'Escape') {
+      handleNameCancel();
+    }
+  };
+
+  // Gérer l'édition de la description
+  const handleDescriptionDoubleClick = () => {
+    setIsEditingDescription(true);
+  };
+
+  const handleDescriptionSubmit = () => {
+    setIsEditingDescription(false);
+  };
+
+  const handleDescriptionCancel = () => {
+    setIsEditingDescription(false);
+  };
+
+  const handleDescriptionKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && e.ctrlKey) {
+      handleDescriptionSubmit();
+    } else if (e.key === 'Escape') {
+      handleDescriptionCancel();
+    }
   };
 
   // Démarrer une nouvelle exécution
-  const handleStartExecution = async () => {
+  const handlePlay = async () => {
     if (nodes.length === 0) {
-      alert('Aucun bloc à exécuter');
       return;
     }
 
-    const executionId = createExecution(
-      `Workflow ${new Date().toLocaleTimeString()}`,
-      nodes,
-      edges
-    );
-
-    setSelectedExecution(executionId);
+    const executionId = createExecution(workflowName, nodes, edges);
     
     try {
       await executeWorkflow(executionId);
@@ -104,371 +119,177 @@ export default function WorkflowControlPanel({
     }
   };
 
-  // Contrôles d'exécution
-  const handlePause = () => {
-    if (selectedExecution) {
-      pauseExecution(selectedExecution);
+  // Pause/Resume
+  const handlePauseResume = () => {
+    if (isExecuting) {
+      pauseExecution('current');
+    } else {
+      resumeExecution('current');
     }
   };
 
-  const handleResume = () => {
-    if (selectedExecution) {
-      resumeExecution(selectedExecution);
-    }
-  };
-
+  // Arrêter l'exécution
   const handleStop = () => {
-    if (selectedExecution) {
-      stopExecution(selectedExecution);
+    stopExecution('current');
+  };
+
+  // Highlighter les blocs du workflow au hover
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+    if (onHighlightNodes) {
+      const nodeIds = nodes.map(node => node.id);
+      onHighlightNodes(nodeIds);
     }
   };
 
-  // Basculer l'expansion d'un step
-  const toggleStepExpansion = (stepId: string) => {
-    setExpandedSteps(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(stepId)) {
-        newSet.delete(stepId);
-      } else {
-        newSet.add(stepId);
-      }
-      return newSet;
-    });
-  };
-
-  // Obtenir l'icône selon le statut du step
-  const getStepIcon = (status: WorkflowStep['status']) => {
-    switch (status) {
-      case 'running':
-        return <Loader2 className="w-4 h-4 animate-spin text-blue-600" />;
-      case 'completed':
-        return <CheckCircle2 className="w-4 h-4 text-green-600" />;
-      case 'error':
-        return <XCircle className="w-4 h-4 text-red-600" />;
-      case 'skipped':
-        return <AlertCircle className="w-4 h-4 text-yellow-600" />;
-      default:
-        return <Clock className="w-4 h-4 text-gray-400" />;
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    if (onHighlightNodes) {
+      onHighlightNodes([]);
     }
   };
-
-  // Obtenir la couleur selon le statut du step
-  const getStepColor = (status: WorkflowStep['status']) => {
-    switch (status) {
-      case 'running':
-        return 'border-blue-200 bg-blue-50';
-      case 'completed':
-        return 'border-green-200 bg-green-50';
-      case 'error':
-        return 'border-red-200 bg-red-50';
-      case 'skipped':
-        return 'border-yellow-200 bg-yellow-50';
-      default:
-        return 'border-gray-200 bg-gray-50';
-    }
-  };
-
-  // Mettre à jour les statuts des nœuds dans le canvas
-  useEffect(() => {
-    if (currentExecutionData && onNodeStatusChange) {
-      for (const step of currentExecutionData.steps) {
-        let canvasStatus = 'disconnected';
-        
-        switch (step.status) {
-          case 'running':
-            canvasStatus = 'syncing';
-            break;
-          case 'completed':
-            canvasStatus = 'connected';
-            break;
-          case 'error':
-            canvasStatus = 'error';
-            break;
-        }
-        
-        onNodeStatusChange(step.nodeId, canvasStatus);
-      }
-    }
-  }, [currentExecutionData?.steps, onNodeStatusChange]);
 
   return (
-    <div className={cn('bg-background', className)}>
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Settings className="w-5 h-5" />
-            Contrôle de Workflow
-          </CardTitle>
-          <CardDescription>
-            Exécutez et surveillez vos chaînes de blocs Claude
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent className="space-y-4">
-          {/* Statistiques du workflow */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="text-sm text-blue-600 font-medium">Total Blocs</div>
-              <div className="text-2xl font-bold text-blue-800">{workflowStats.totalNodes}</div>
-            </div>
-            <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
-              <div className="text-sm text-orange-600 font-medium">Blocs Claude</div>
-              <div className="text-2xl font-bold text-orange-800">{workflowStats.claudeNodes}</div>
-            </div>
-          </div>
-
-          {/* Contrôles principaux */}
-          <div className="space-y-2">
-            <div className="flex gap-2">
-              <Button
-                onClick={handleStartExecution}
-                disabled={isExecuting || nodes.length === 0}
-                className="flex-1"
-                size="sm"
+    <div 
+      className={cn('bg-background', className)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <Card className={cn(
+        'transition-all duration-200',
+        isHovered && 'shadow-md border-blue-200'
+      )}>
+        <CardContent className="p-4 space-y-3">
+          {/* Nom du workflow - éditable */}
+          <div className="space-y-1">
+            {isEditingName ? (
+              <div className="flex items-center gap-2">
+                <Input
+                  ref={nameInputRef}
+                  value={workflowName}
+                  onChange={(e) => setWorkflowName(e.target.value)}
+                  onKeyDown={handleNameKeyDown}
+                  onBlur={handleNameSubmit}
+                  className="text-lg font-semibold border-0 p-0 h-auto bg-transparent focus-visible:ring-1"
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleNameSubmit}
+                  className="h-6 w-6 p-0"
+                >
+                  <Check className="w-3 h-3" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleNameCancel}
+                  className="h-6 w-6 p-0"
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </div>
+            ) : (
+              <h3 
+                className="text-lg font-semibold cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors flex items-center gap-2 group"
+                onDoubleClick={handleNameDoubleClick}
+                title="Double-cliquez pour modifier"
               >
-                <Play className="w-4 h-4 mr-2" />
-                {isExecuting ? 'En cours...' : 'Démarrer'}
-              </Button>
-              
-              <Button
-                variant="outline"
-                onClick={handlePause}
-                disabled={!isExecuting || getExecutionStatus(selectedExecution || '') !== 'running'}
-                size="sm"
-              >
-                <Pause className="w-4 h-4" />
-              </Button>
-              
-              <Button
-                variant="outline"
-                onClick={handleStop}
-                disabled={!selectedExecution || getExecutionStatus(selectedExecution) === 'completed'}
-                size="sm"
-              >
-                <Square className="w-4 h-4" />
-              </Button>
-            </div>
-
-            {currentExecutionData && (
-              <Button
-                variant="outline"
-                onClick={() => setShowExecutionDetails(true)}
-                className="w-full"
-                size="sm"
-              >
-                <Eye className="w-4 h-4 mr-2" />
-                Voir les détails
-              </Button>
+                {workflowName}
+                <Edit3 className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity" />
+              </h3>
             )}
           </div>
 
-          {/* Statut de l'exécution actuelle */}
-          {currentExecutionData && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Exécution en cours</span>
-                <Badge 
-                  variant={
-                    currentExecutionData.context.status === 'completed' ? 'default' :
-                    currentExecutionData.context.status === 'error' ? 'destructive' :
-                    currentExecutionData.context.status === 'running' ? 'secondary' :
-                    'outline'
-                  }
-                >
-                  {currentExecutionData.context.status}
-                </Badge>
-              </div>
-              
-              <Progress value={calculateProgress(currentExecutionData)} className="h-2" />
-              
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>
-                  {currentExecutionData.context.completedNodes.size} / {currentExecutionData.steps.length} blocs
-                </span>
-                <span>
-                  {currentExecutionData.context.status === 'completed' && currentExecutionData.completedAt
-                    ? `Terminé à ${currentExecutionData.completedAt.toLocaleTimeString()}`
-                    : `Démarré à ${currentExecutionData.context.startedAt.toLocaleTimeString()}`
-                  }
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Historique rapide */}
-          {executions.length > 0 && (
-            <div>
-              <div className="text-sm font-medium mb-2">Exécutions récentes</div>
-              <ScrollArea className="h-24">
-                <div className="space-y-1">
-                  {executions.slice(-3).map((execution) => (
-                    <div
-                      key={execution.id}
-                      onClick={() => setSelectedExecution(execution.id)}
-                      className={cn(
-                        "p-2 rounded border cursor-pointer transition-colors",
-                        selectedExecution === execution.id
-                          ? "border-blue-300 bg-blue-50"
-                          : "border-gray-200 hover:bg-gray-50"
-                      )}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium">{execution.name}</span>
-                        <Badge variant="outline" className="text-xs">
-                          {execution.context.status}
-                        </Badge>
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {execution.context.completedNodes.size} / {execution.steps.length} blocs
-                      </div>
-                    </div>
-                  ))}
+          {/* Description - éditable */}
+          <div className="space-y-1">
+            {isEditingDescription ? (
+              <div className="space-y-2">
+                <Textarea
+                  ref={descriptionTextareaRef}
+                  value={workflowDescription}
+                  onChange={(e) => setWorkflowDescription(e.target.value)}
+                  onKeyDown={handleDescriptionKeyDown}
+                  onBlur={handleDescriptionSubmit}
+                  className="text-sm text-muted-foreground border-0 p-0 bg-transparent focus-visible:ring-1 min-h-[60px] resize-none"
+                  placeholder="Description du workflow..."
+                />
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleDescriptionSubmit}
+                    className="h-6 px-2 text-xs"
+                  >
+                    <Check className="w-3 h-3 mr-1" />
+                    Ctrl+Enter
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleDescriptionCancel}
+                    className="h-6 px-2 text-xs"
+                  >
+                    <X className="w-3 h-3 mr-1" />
+                    Échap
+                  </Button>
                 </div>
-              </ScrollArea>
+              </div>
+            ) : (
+              <p 
+                className="text-sm text-muted-foreground cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors group flex items-start gap-2 min-h-[40px]"
+                onDoubleClick={handleDescriptionDoubleClick}
+                title="Double-cliquez pour modifier"
+              >
+                <span className="flex-1">{workflowDescription}</span>
+                <Edit3 className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity mt-0.5 flex-shrink-0" />
+              </p>
+            )}
+          </div>
+
+          {/* Contrôles de lecture */}
+          <div className="flex items-center gap-2 pt-2">
+            <Button
+              onClick={handlePlay}
+              disabled={isExecuting || nodes.length === 0}
+              size="sm"
+              className="flex-1"
+            >
+              <Play className="w-4 h-4 mr-2" />
+              {isExecuting ? 'En cours...' : 'Play'}
+            </Button>
+            
+            <Button
+              variant="outline"
+              onClick={handlePauseResume}
+              disabled={!isExecuting}
+              size="sm"
+            >
+              <Pause className="w-4 h-4" />
+            </Button>
+          </div>
+
+          {/* Indicateur de statut minimaliste */}
+          {isExecuting && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+              <span>Workflow en cours d'exécution</span>
             </div>
           )}
 
-          {currentExecutionData?.context.error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-              <div className="flex items-center gap-2 text-red-700 mb-1">
-                <XCircle className="w-4 h-4" />
-                <span className="font-medium">Erreur</span>
-              </div>
-              <div className="text-sm text-red-600">
-                {currentExecutionData.context.error}
-              </div>
+          {/* Informations sur les blocs inclus au hover */}
+          {isHovered && (
+            <div className="text-xs text-muted-foreground bg-blue-50 p-2 rounded border border-blue-200">
+              <span className="font-medium">Blocs inclus:</span> {nodes.length} 
+              {nodes.length > 0 && (
+                <span className="ml-1">
+                  ({nodes.slice(0, 2).map(n => n.data?.title || n.id).join(', ')}{nodes.length > 2 && `, +${nodes.length - 2}`})
+                </span>
+              )}
             </div>
           )}
         </CardContent>
       </Card>
-
-      {/* Dialog des détails d'exécution */}
-      <Dialog open={showExecutionDetails} onOpenChange={setShowExecutionDetails}>
-        <DialogContent className="max-w-4xl max-h-[80vh]">
-          <DialogHeader>
-            <DialogTitle>Détails de l'exécution</DialogTitle>
-          </DialogHeader>
-          
-          {currentExecutionData && (
-            <div className="space-y-4">
-              {/* En-tête de l'exécution */}
-              <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                <div>
-                  <h3 className="font-medium">{currentExecutionData.name}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    ID: {currentExecutionData.id}
-                  </p>
-                </div>
-                <Badge 
-                  variant={
-                    currentExecutionData.context.status === 'completed' ? 'default' :
-                    currentExecutionData.context.status === 'error' ? 'destructive' :
-                    'secondary'
-                  }
-                  className="px-3 py-1"
-                >
-                  {currentExecutionData.context.status}
-                </Badge>
-              </div>
-
-              {/* Progression globale */}
-              <div>
-                <div className="flex justify-between mb-2">
-                  <span className="font-medium">Progression</span>
-                  <span className="text-sm text-muted-foreground">
-                    {currentExecutionData.context.completedNodes.size} / {currentExecutionData.steps.length}
-                  </span>
-                </div>
-                <Progress value={calculateProgress(currentExecutionData)} />
-              </div>
-
-              {/* Liste des steps */}
-              <div>
-                <h4 className="font-medium mb-3">Étapes d'exécution</h4>
-                <ScrollArea className="max-h-96">
-                  <div className="space-y-2">
-                    {currentExecutionData.steps.map((step, index) => (
-                      <div
-                        key={step.nodeId}
-                        className={cn(
-                          "border rounded-lg transition-all",
-                          getStepColor(step.status)
-                        )}
-                      >
-                        <div
-                          onClick={() => toggleStepExpansion(step.nodeId)}
-                          className="flex items-center gap-3 p-3 cursor-pointer hover:bg-black/5"
-                        >
-                          <div className="flex items-center gap-2">
-                            {getStepIcon(step.status)}
-                            <span className="font-mono text-xs bg-white px-2 py-1 rounded border">
-                              {index + 1}
-                            </span>
-                          </div>
-                          
-                          <div className="flex-1">
-                            <div className="font-medium">{step.nodeId}</div>
-                            <div className="text-sm text-muted-foreground">
-                              Type: {step.type}
-                              {step.startTime && (
-                                <>
-                                  {' • '}Démarré à {step.startTime.toLocaleTimeString()}
-                                </>
-                              )}
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            {step.startTime && step.endTime && (
-                              <Badge variant="outline" className="text-xs">
-                                {Math.round((step.endTime.getTime() - step.startTime.getTime()) / 1000)}s
-                              </Badge>
-                            )}
-                            {expandedSteps.has(step.nodeId) ? (
-                              <ChevronDown className="w-4 h-4" />
-                            ) : (
-                              <ChevronRight className="w-4 h-4" />
-                            )}
-                          </div>
-                        </div>
-
-                        {expandedSteps.has(step.nodeId) && (
-                          <div className="border-t p-3 bg-white/50">
-                            {step.error && (
-                              <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded text-sm">
-                                <span className="font-medium text-red-700">Erreur:</span>
-                                <div className="text-red-600">{step.error}</div>
-                              </div>
-                            )}
-
-                            {step.input && (
-                              <div className="mb-3">
-                                <div className="text-sm font-medium mb-1">Entrée:</div>
-                                <pre className="text-xs bg-gray-100 p-2 rounded overflow-auto max-h-32">
-                                  {JSON.stringify(step.input, null, 2)}
-                                </pre>
-                              </div>
-                            )}
-
-                            {step.output && (
-                              <div>
-                                <div className="text-sm font-medium mb-1">Sortie:</div>
-                                <pre className="text-xs bg-gray-100 p-2 rounded overflow-auto max-h-32">
-                                  {JSON.stringify(step.output, null, 2)}
-                                </pre>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
