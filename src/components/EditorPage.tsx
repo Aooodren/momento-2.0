@@ -40,8 +40,6 @@ import WorkflowControlPanel from './WorkflowControlPanel';
 import AdvancedBlockEditDialog from './AdvancedBlockEditDialog';
 import LogicBlockEditDialog from './LogicBlockEditDialog';
 import CollaboratorCursors from './CollaboratorCursors';
-import CollaborationPanel from './CollaborationPanel';
-import EnhancedInviteDialog from './EnhancedInviteDialog';
 
 interface ProjectDetails {
   id: string;
@@ -127,9 +125,6 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
   const {
     cursors,
     selections,
-    activities,
-    connectedUsers,
-    isConnected,
     broadcastCanvasActivity,
     updateSelection
   } = useRealtimeCollaboration({ 
@@ -948,29 +943,6 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
         </div>
       )}
 
-      {/* Panneau de collaboration (côté droit) */}
-      <div className="w-80 bg-white border-l border-gray-200 flex-shrink-0 order-last">
-        <div className="p-4 h-full flex flex-col gap-4">
-          <CollaborationPanel
-            connectedUsers={connectedUsers}
-            activities={activities}
-            isConnected={isConnected}
-            onInviteClick={() => {}}
-          />
-          
-          <EnhancedInviteDialog
-            projectId={project.id}
-            projectTitle={project.title}
-            trigger={
-              <Button variant="outline" size="sm" className="w-full">
-                <Users className="w-4 h-4 mr-2" />
-                Inviter un collaborateur
-              </Button>
-            }
-          />
-        </div>
-      </div>
-      
       {/* Contenu principal */}
       <div className="flex-1 flex flex-col">
       {/* Header */}
