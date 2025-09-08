@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { ArrowLeft, Plus, Save, AlertCircle, Loader2, RefreshCw, ChevronDown, Sparkles, Layers, Eye, EyeOff } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { ArrowLeft, Plus, Save, AlertCircle, Loader2, RefreshCw, ChevronDown, Sparkles, Layers, Eye, EyeOff, Play } from 'lucide-react';
 import { Button } from './ui/button';
 import { Alert, AlertDescription } from './ui/alert';
 import { Badge } from './ui/badge';
@@ -20,10 +20,7 @@ import ReactFlow, {
   NodeTypes,
   BackgroundVariant,
   OnConnect,
-  OnNodesChange,
-  OnEdgesChange,
-  OnNodeDrag,
-  OnNodeDragStop,
+  type OnNodeDrag,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -35,6 +32,10 @@ import { useProjectMembers } from '../hooks/useProjectMembers';
 import { useAuthContext } from '../hooks/useAuth';
 import { AdvancedCanvasBlock } from './AdvancedCanvasBlock';
 import { LogicBlock } from './LogicBlock';
+import ClaudeBlock from './ClaudeBlock';
+import ClaudeFigmaBlock from './ClaudeFigmaBlock';
+import ClaudeNotionBlock from './ClaudeNotionBlock';
+import WorkflowControlPanel from './WorkflowControlPanel';
 import AdvancedBlockEditDialog from './AdvancedBlockEditDialog';
 import LogicBlockEditDialog from './LogicBlockEditDialog';
 
@@ -55,6 +56,9 @@ interface EditorPageProps {
 const nodeTypes: NodeTypes = {
   block: AdvancedCanvasBlock,
   logic: LogicBlock,
+  claude: ClaudeBlock,
+  'claude-figma': ClaudeFigmaBlock,
+  'claude-notion': ClaudeNotionBlock,
 };
 
 export default function EditorPage({ project, onBack, onProjectUpdate }: EditorPageProps) {
@@ -66,7 +70,7 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
   const [showAdvancedEditDialog, setShowAdvancedEditDialog] = useState(false);
   const [showLogicEditDialog, setShowLogicEditDialog] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-  const [blockTypeToCreate, setBlockTypeToCreate] = useState<'standard' | 'logic'>('standard');
+  const [blockTypeToCreate, setBlockTypeToCreate] = useState<'standard' | 'logic' | 'claude' | 'claude-figma' | 'claude-notion'>('standard');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [pendingChanges, setPendingChanges] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -81,13 +85,15 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
   // États pour le panneau calques
   const [showLayersPanel, setShowLayersPanel] = useState(false);
   const [hiddenBlocks, setHiddenBlocks] = useState<Set<string>>(new Set());
+  
+  // États pour le panneau de workflow
+  const [showWorkflowPanel, setShowWorkflowPanel] = useState(false);
 
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const layoutInfoTimeoutRef = useRef<NodeJS.Timeout>();
   const positionUpdatesRef = useRef<Map<string, { position_x: number; position_y: number }>>(new Map());
 
   const {
-    loading,
     error,
     getBlocks,
     createBlock,
@@ -106,12 +112,12 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
 
   // Hooks pour les membres et permissions
   const { user } = useAuthContext();
-  const { members, getMembers } = useProjectMembers(project.id);
+  const { members } = useProjectMembers(project.id);
   
   // Get project owner and user role
   const projectOwner = members.find(m => m.role === 'owner');
   const currentUserMember = user ? members.find(m => m.id === user.id) : null;
-  const { permissions, canEdit } = useProjectPermissions(
+  const {} = useProjectPermissions(
     projectOwner?.id, 
     currentUserMember?.role as any
   );
@@ -241,10 +247,19 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
       // Convertir les blocs en nœuds ReactFlow
       const flowNodes: Node[] = blocksData.map((block) => {
         const isLogicBlock = block.type === 'logic' || block.metadata?.logicType;
+        const isClaudeBlock = block.type === 'claude';
+        const isClaudeFigmaBlock = block.type === 'claude-figma';
+        const isClaudeNotionBlock = block.type === 'claude-notion';
+        
+        let nodeType = 'block'; // défaut
+        if (isLogicBlock) nodeType = 'logic';
+        else if (isClaudeBlock) nodeType = 'claude';
+        else if (isClaudeFigmaBlock) nodeType = 'claude-figma';
+        else if (isClaudeNotionBlock) nodeType = 'claude-notion';
         
         return {
           id: block.id,
-          type: isLogicBlock ? 'logic' : 'block',
+          type: nodeType,
           position: { x: block.position_x, y: block.position_y },
           data: {
             ...block,
@@ -314,7 +329,7 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
       ];
 
       // Créer les blocs un par un
-      const createdBlocks = [];
+      const createdBlocks: Block[] = [];
       for (const blockData of demoBlocks) {
         const block = await createBlock(project.id, blockData);
         if (block) {
@@ -327,7 +342,7 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
       // Créer les relations entre les blocs (si au moins 2 blocs créés)
       if (createdBlocks.length >= 2) {
         // Relation entre le premier et le deuxième bloc
-        const relation1 = await createRelation(project.id, {
+        await createRelation(project.id, {
           source_block_id: createdBlocks[0].id,
           target_block_id: createdBlocks[1].id,
           type: 'connection',
@@ -335,7 +350,7 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
 
         // Relation entre le deuxième et le troisième bloc (si il existe)
         if (createdBlocks.length >= 3) {
-          const relation2 = await createRelation(project.id, {
+          await createRelation(project.id, {
             source_block_id: createdBlocks[1].id,
             target_block_id: createdBlocks[2].id,
             type: 'connection',
@@ -356,14 +371,14 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
 
   // Sauvegarde automatique des positions avec debounce
   const savePositions = useCallback(() => {
-    const updates = Array.from(positionUpdatesRef.current.entries()).map(([id, position]) => ({
+    const updates = Array.from(positionUpdatesRef.current.entries()).map(([id, position]: [string, { position_x: number; position_y: number }]) => ({
       id,
       ...position,
     }));
 
     if (updates.length > 0) {
       console.log('EditorPage - Saving position updates:', updates);
-      batchUpdatePositions(updates).then((success) => {
+      batchUpdatePositions(updates).then((success: boolean) => {
         if (success) {
           console.log('EditorPage - Position updates saved successfully');
           setLastSaved(new Date());
@@ -372,7 +387,7 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
         } else {
           console.error('EditorPage - Failed to save position updates');
         }
-      }).catch((err) => {
+      }).catch((err: Error) => {
         console.error('EditorPage - Error saving positions:', err);
       });
     }
@@ -387,7 +402,7 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
   }, [savePositions]);
 
   // Gestionnaire de déplacement de nœuds
-  const handleNodeDragStop: OnNodeDragStop = useCallback((_, node) => {
+  const handleNodeDragStop: OnNodeDrag = useCallback((_, node: Node) => {
     const blockId = node.id;
     console.log(`EditorPage - Position update for block: ${blockId}`);
     
@@ -401,7 +416,7 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
   }, [debouncedSave]);
 
   // Gestionnaire de connexion entre nœuds
-  const onConnect: OnConnect = useCallback(async (connection) => {
+  const onConnect: OnConnect = useCallback(async (connection: Connection) => {
     if (!connection.source || !connection.target) return;
 
     try {
@@ -523,6 +538,132 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
     setIsCreating(true);
     setBlockTypeToCreate('logic');
     setShowLogicEditDialog(true);
+  };
+
+  // Créer un bloc Claude générique
+  const handleCreateClaudeBlock = async () => {
+    try {
+      const claudeBlock = await createBlock(project.id, {
+        title: "Claude AI",
+        description: "Assistant IA pour traitement de texte",
+        type: "claude",
+        position_x: Math.random() * 400 + 100,
+        position_y: Math.random() * 300 + 100,
+        metadata: {
+          claudeType: 'prompt',
+          prompt: '',
+          systemPrompt: '',
+          model: 'claude-3-sonnet',
+          temperature: 0.7,
+          maxTokens: 4000
+        }
+      });
+
+      if (claudeBlock) {
+        const newNode: Node = {
+          id: claudeBlock.id,
+          type: 'claude',
+          position: { x: claudeBlock.position_x, y: claudeBlock.position_y },
+          data: {
+            ...claudeBlock,
+            onEdit: handleEditBlock,
+            onDelete: handleDeleteBlock,
+          },
+        };
+
+        setNodes((nds) => [...nds, newNode]);
+        setBlocks((blocks) => [...blocks, claudeBlock]);
+      }
+    } catch (err) {
+      console.error('Erreur création bloc Claude:', err);
+    }
+  };
+
+  // Créer un bloc Claude-Figma
+  const handleCreateClaudeFigmaBlock = async () => {
+    try {
+      const claudeFigmaBlock = await createBlock(project.id, {
+        title: "Claude + Figma",
+        description: "Analyse de designs Figma avec Claude",
+        type: "claude-figma",
+        position_x: Math.random() * 400 + 100,
+        position_y: Math.random() * 300 + 100,
+        metadata: {
+          prompt: '',
+          figmaConfig: {
+            analysisType: 'design-critique'
+          },
+          outputConfig: {
+            format: 'structured',
+            language: 'fr',
+            includeImages: true
+          },
+          model: 'claude-3-sonnet'
+        }
+      });
+
+      if (claudeFigmaBlock) {
+        const newNode: Node = {
+          id: claudeFigmaBlock.id,
+          type: 'claude-figma',
+          position: { x: claudeFigmaBlock.position_x, y: claudeFigmaBlock.position_y },
+          data: {
+            ...claudeFigmaBlock,
+            onEdit: handleEditBlock,
+            onDelete: handleDeleteBlock,
+          },
+        };
+
+        setNodes((nds) => [...nds, newNode]);
+        setBlocks((blocks) => [...blocks, claudeFigmaBlock]);
+      }
+    } catch (err) {
+      console.error('Erreur création bloc Claude-Figma:', err);
+    }
+  };
+
+  // Créer un bloc Claude-Notion
+  const handleCreateClaudeNotionBlock = async () => {
+    try {
+      const claudeNotionBlock = await createBlock(project.id, {
+        title: "Claude + Notion",
+        description: "Traitement de contenu Notion avec Claude",
+        type: "claude-notion",
+        position_x: Math.random() * 400 + 100,
+        position_y: Math.random() * 300 + 100,
+        metadata: {
+          prompt: '',
+          notionConfig: {
+            sourceType: 'page',
+            processType: 'content-enhancement'
+          },
+          outputConfig: {
+            action: 'create-page',
+            format: 'text',
+            language: 'fr'
+          },
+          model: 'claude-3-sonnet'
+        }
+      });
+
+      if (claudeNotionBlock) {
+        const newNode: Node = {
+          id: claudeNotionBlock.id,
+          type: 'claude-notion',
+          position: { x: claudeNotionBlock.position_x, y: claudeNotionBlock.position_y },
+          data: {
+            ...claudeNotionBlock,
+            onEdit: handleEditBlock,
+            onDelete: handleDeleteBlock,
+          },
+        };
+
+        setNodes((nds) => [...nds, newNode]);
+        setBlocks((blocks) => [...blocks, claudeNotionBlock]);
+      }
+    } catch (err) {
+      console.error('Erreur création bloc Claude-Notion:', err);
+    }
   };
 
   // Éditer un bloc existant
@@ -759,7 +900,30 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
   const selectedBlockId = nodes.find(node => node.selected)?.id;
 
   return (
-    <div className="w-full h-full bg-gray-50 flex flex-col">
+    <div className="w-full h-full bg-gray-50 flex">
+      {/* Panneau de workflow (latéral) */}
+      {showWorkflowPanel && (
+        <div className="w-80 bg-white border-r border-gray-200 flex-shrink-0">
+          <WorkflowControlPanel
+            nodes={nodes}
+            edges={edges}
+            onNodeStatusChange={(nodeId, status) => {
+              // Mettre à jour le statut du nœud dans le canvas
+              setNodes((nds) =>
+                nds.map((node) =>
+                  node.id === nodeId
+                    ? { ...node, data: { ...node.data, status } }
+                    : node
+                )
+              );
+            }}
+            className="h-full"
+          />
+        </div>
+      )}
+      
+      {/* Contenu principal */}
+      <div className="flex-1 flex flex-col">
       {/* Header */}
       <div className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-6 flex-shrink-0">
         <div className="flex items-center gap-4">
@@ -841,6 +1005,20 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
             </Tooltip>
           </TooltipProvider>
           
+          {/* Bouton Workflow */}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="gap-2"
+            onClick={() => setShowWorkflowPanel(!showWorkflowPanel)}
+          >
+            <Play className="w-4 h-4" />
+            Workflow
+            <Badge variant="secondary" className="ml-1 text-xs">
+              {edges.length}
+            </Badge>
+          </Button>
+
           {/* Bouton Calques */}
           <DropdownMenu open={showLayersPanel} onOpenChange={setShowLayersPanel}>
             <DropdownMenuTrigger asChild>
@@ -982,12 +1160,37 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
                 <ChevronDown className="w-3 h-3" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="end" className="w-64">
               <DropdownMenuItem onClick={handleCreateStandardBlock}>
                 <div className="flex flex-col items-start">
                   <span className="font-medium">Bloc standard</span>
                   <span className="text-xs text-muted-foreground">
                     Notion, OpenAI, Figma, etc.
+                  </span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleCreateClaudeBlock}>
+                <div className="flex flex-col items-start">
+                  <span className="font-medium">Bloc Claude AI</span>
+                  <span className="text-xs text-muted-foreground">
+                    Assistant IA généraliste avec prompts personnalisés
+                  </span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleCreateClaudeFigmaBlock}>
+                <div className="flex flex-col items-start">
+                  <span className="font-medium">Claude + Figma</span>
+                  <span className="text-xs text-muted-foreground">
+                    Analyse de designs Figma avec intelligence artificielle
+                  </span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleCreateClaudeNotionBlock}>
+                <div className="flex flex-col items-start">
+                  <span className="font-medium">Claude + Notion</span>
+                  <span className="text-xs text-muted-foreground">
+                    Traitement de contenu Notion avec Claude
                   </span>
                 </div>
               </DropdownMenuItem>
@@ -1134,6 +1337,7 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
         onSave={handleSaveBlock}
         isCreating={isCreating}
       />
+      </div>
     </div>
   );
 }

@@ -7,10 +7,14 @@ import {
   Loader2,
   AlertCircle,
   Settings,
-  Zap
+  Zap,
+  Download
 } from "lucide-react";
 import { useSupabaseIntegrations } from "../hooks/useSupabaseIntegrations";
 import NotionConnectButton from "./NotionConnectButton";
+import ClaudeConnectButton from "./ClaudeConnectButton";
+import FigmaConnectButton from "./FigmaConnectButton";
+import IntegrationImportDialog from "./IntegrationImportDialog";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
@@ -39,6 +43,10 @@ interface IntegrationsPageProps {
 
 export default function IntegrationsPage({ onBack }: IntegrationsPageProps) {
   const [selectedTool, setSelectedTool] = useState<IntegrationTool | null>(null);
+  const [importDialog, setImportDialog] = useState<{
+    open: boolean;
+    type: 'claude' | 'figma' | 'notion' | null;
+  }>({ open: false, type: null });
   const { 
     integrations, 
     connectIntegration, 
@@ -129,6 +137,34 @@ export default function IntegrationsPage({ onBack }: IntegrationsPageProps) {
 
   const handleNotionError = (error: string) => {
     console.error('Erreur connexion Notion:', error);
+  };
+
+  const handleClaudeConnect = () => {
+    console.log('Claude connecté avec succès');
+    refetch();
+  };
+
+  const handleClaudeError = (error: string) => {
+    console.error('Erreur connexion Claude:', error);
+  };
+
+  const handleFigmaConnect = () => {
+    console.log('Figma connecté avec succès');
+    refetch();
+  };
+
+  const handleFigmaError = (error: string) => {
+    console.error('Erreur connexion Figma:', error);
+  };
+
+  const handleImport = (toolId: 'claude' | 'figma' | 'notion') => {
+    setImportDialog({ open: true, type: toolId });
+  };
+
+  const handleImportComplete = (data: any) => {
+    console.log('Données importées:', data);
+    // Ici vous pouvez traiter les données importées
+    // Par exemple, les ajouter au projet actuel ou créer un nouveau projet
   };
 
   const handleDisconnect = async (toolId: string) => {
@@ -342,6 +378,14 @@ export default function IntegrationsPage({ onBack }: IntegrationsPageProps) {
                                 <Button
                                   variant="outline"
                                   size="sm"
+                                  onClick={() => handleImport(tool.id as 'claude' | 'figma' | 'notion')}
+                                >
+                                  <Download className="h-4 w-4 mr-2" />
+                                  Importer
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
                                   onClick={() => setSelectedTool(tool)}
                                 >
                                   <Settings className="h-4 w-4 mr-2" />
@@ -360,6 +404,18 @@ export default function IntegrationsPage({ onBack }: IntegrationsPageProps) {
                                 <NotionConnectButton
                                   onConnect={handleNotionConnect}
                                   onError={handleNotionError}
+                                  className="min-w-[100px]"
+                                />
+                              ) : tool.id === 'claude' ? (
+                                <ClaudeConnectButton
+                                  onConnect={handleClaudeConnect}
+                                  onError={handleClaudeError}
+                                  className="min-w-[100px]"
+                                />
+                              ) : tool.id === 'figma' ? (
+                                <FigmaConnectButton
+                                  onConnect={handleFigmaConnect}
+                                  onError={handleFigmaError}
                                   className="min-w-[100px]"
                                 />
                               ) : (
@@ -488,6 +544,14 @@ export default function IntegrationsPage({ onBack }: IntegrationsPageProps) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog d'import */}
+      <IntegrationImportDialog
+        open={importDialog.open}
+        onOpenChange={(open) => setImportDialog({ ...importDialog, open })}
+        integrationType={importDialog.type!}
+        onImportComplete={handleImportComplete}
+      />
 
     </div>
   );
