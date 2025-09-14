@@ -14,12 +14,9 @@ import {
   ArrowLeft, 
   User, 
   Bell, 
-  Shield, 
-  Monitor, 
-  Globe,
+  Shield,
   Loader2,
   Save,
-  CheckCircle, 
   Trash2, 
   Download, 
   Upload,
@@ -33,7 +30,6 @@ import {
 } from "lucide-react";
 import { useAuthContext } from "../hooks/useAuth";
 import { useUserPreferences } from "../hooks/useUserPreferences";
-import UserPreferencesTest from "./UserPreferencesTest";
 
 interface SettingsPageProps {
   onBack: () => void;
@@ -148,10 +144,8 @@ export default function SettingsPageNew({ onBack }: SettingsPageProps) {
 
   const sections = [
     { id: 'profile', label: 'Profil', icon: User },
-    { id: 'appearance', label: 'Apparence', icon: Monitor },
     { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'security', label: 'Sécurité', icon: Shield },
-    { id: 'test', label: 'Test', icon: CheckCircle }
+    { id: 'security', label: 'Sécurité', icon: Shield }
   ];
 
   const renderProfileSection = () => (
@@ -288,75 +282,6 @@ export default function SettingsPageNew({ onBack }: SettingsPageProps) {
     </div>
   );
 
-  const renderAppearanceSection = () => (
-    <div className="space-y-6">
-      <div>
-        <h3 className="mb-4">Préférences d'affichage</h3>
-        
-        <div className="space-y-6">
-          {/* Note: Dark mode removed - app now uses light theme only */}
-
-          {/* Langue */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Globe className="w-4 h-4" />
-              <span className="font-medium">Langue</span>
-            </div>
-            <Select 
-              value={preferences.language} 
-              onValueChange={(value) => savePreferences({ language: value as any })}
-            >
-              <SelectTrigger className="w-full max-w-xs">
-                <SelectValue placeholder="Sélectionner une langue" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="fr">Français</SelectItem>
-                <SelectItem value="en">English</SelectItem>
-                <SelectItem value="es">Español</SelectItem>
-                <SelectItem value="de">Deutsch</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Separator />
-
-          {/* Taille de police */}
-          <div className="space-y-3">
-            <span className="font-medium">Taille de police</span>
-            <Select 
-              value={preferences.fontSize}
-              onValueChange={(value) => savePreferences({ fontSize: value as any })}
-            >
-              <SelectTrigger className="w-full max-w-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="small">Petite</SelectItem>
-                <SelectItem value="medium">Moyenne</SelectItem>
-                <SelectItem value="large">Grande</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Separator />
-
-          {/* Sidebar */}
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <span className="font-medium">Sidebar réduite par défaut</span>
-              <p className="text-sm text-muted-foreground">
-                Démarrer avec la sidebar en mode réduit
-              </p>
-            </div>
-            <Switch 
-              checked={preferences.sidebarCollapsed}
-              onCheckedChange={(checked) => savePreferences({ sidebarCollapsed: checked })}
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 
   const renderNotificationsSection = () => (
     <div className="space-y-6">
@@ -581,30 +506,15 @@ export default function SettingsPageNew({ onBack }: SettingsPageProps) {
     </div>
   );
 
-  const renderTestSection = () => (
-    <div className="space-y-6">
-      <div>
-        <h3 className="mb-4">Test des préférences utilisateur</h3>
-        <p className="text-muted-foreground mb-6">
-          Cette section permet de tester le système de préférences en temps réel.
-        </p>
-        <UserPreferencesTest />
-      </div>
-    </div>
-  );
 
   const renderCurrentSection = () => {
     switch (activeSection) {
       case 'profile':
         return renderProfileSection();
-      case 'appearance':
-        return renderAppearanceSection();
       case 'notifications':
         return renderNotificationsSection();
       case 'security':
         return renderSecuritySection();
-      case 'test':
-        return renderTestSection();
       default:
         return renderProfileSection();
     }
