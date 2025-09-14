@@ -3,11 +3,14 @@
   import App from "./App.tsx";
   import "./index.css";
   import { SpeedInsights } from "@vercel/speed-insights/react";
+  import { NotificationProvider } from "./components/ui/notifications";
 
   createRoot(document.getElementById("root")!).render(
     <>
-      <App />
-      <SpeedInsights />
+      <NotificationProvider>
+        <App />
+        <SpeedInsights />
+      </NotificationProvider>
     </>
   );
   

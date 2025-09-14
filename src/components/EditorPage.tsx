@@ -38,6 +38,7 @@ import ClaudeNotionBlock from './ClaudeNotionBlock';
 import AdvancedBlockEditDialog from './AdvancedBlockEditDialog';
 import LogicBlockEditDialog from './LogicBlockEditDialog';
 import CollaboratorCursors from './CollaboratorCursors';
+import { useNotify } from './ui/notifications';
 
 interface ProjectDetails {
   id: string;
@@ -75,7 +76,8 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
   const [pendingChanges, setPendingChanges] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isApplyingLayout, setIsApplyingLayout] = useState(false);
-  const [lastLayoutInfo, setLastLayoutInfo] = useState<{columns: number, spacing: number, totalNodes: number} | null>(null);
+  // const [lastLayoutInfo, setLastLayoutInfo] = useState<{columns: number, spacing: number, totalNodes: number} | null>(null);
+  const notify = useNotify();
   
   // États pour l'édition du nom de projet
   const [isEditingProjectName, setIsEditingProjectName] = useState(false);
@@ -145,25 +147,25 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
   }, [project.id]);
 
   // Auto-masquer l'information de layout après 3 secondes
-  useEffect(() => {
-    if (lastLayoutInfo) {
-      // Nettoyer le timeout précédent s'il existe
-      if (layoutInfoTimeoutRef.current) {
-        clearTimeout(layoutInfoTimeoutRef.current);
-      }
-      
-      // Programmer la disparition de l'alerte après 3 secondes
-      layoutInfoTimeoutRef.current = setTimeout(() => {
-        setLastLayoutInfo(null);
-      }, 3000);
-    }
-    
-    return () => {
-      if (layoutInfoTimeoutRef.current) {
-        clearTimeout(layoutInfoTimeoutRef.current);
-      }
-    };
-  }, [lastLayoutInfo]);
+  // useEffect(() => {
+  //   if (lastLayoutInfo) {
+  //     // Nettoyer le timeout précédent s'il existe
+  //     if (layoutInfoTimeoutRef.current) {
+  //       clearTimeout(layoutInfoTimeoutRef.current);
+  //     }
+  //     
+  //     // Programmer la disparition de l'alerte après 3 secondes
+  //     layoutInfoTimeoutRef.current = setTimeout(() => {
+  //       setLastLayoutInfo(null);
+  //     }, 3000);
+  //   }
+  //   
+  //   return () => {
+  //     if (layoutInfoTimeoutRef.current) {
+  //       clearTimeout(layoutInfoTimeoutRef.current);
+  //     }
+  //   };
+  // }, [lastLayoutInfo]);
 
   // Nettoyage au démontage
   useEffect(() => {
@@ -577,8 +579,8 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
       
       console.log('EditorPage - Applied grid layout:', result.gridInfo);
       
-      // Stocker les informations du layout appliqué
-      setLastLayoutInfo(result.gridInfo);
+      // Afficher la notification de layout
+      notify.layout(result.gridInfo.columns, result.gridInfo.totalNodes, result.gridInfo.spacing);
       
       // Marquer comme ayant des changements en cours
       setPendingChanges(true);
@@ -751,6 +753,10 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
         // Diffuser l'activité de suppression
         const deletedBlock = blocks.find(b => b.id === blockId);
         broadcastCanvasActivity('node_deleted', deletedBlock?.title || 'Bloc');
+        
+        // Marquer comme ayant des changements en cours et déclencher la sauvegarde
+        setPendingChanges(true);
+        debouncedSave();
         
         console.log(`EditorPage - Block ${blockId} deleted successfully`);
       }
@@ -978,16 +984,6 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
                   <p className="text-xs text-muted-foreground">
                     Aligne tous les blocs sur une grille régulière avec un espacement généreux de 350px entre chaque bloc.
                   </p>
-                  {lastLayoutInfo && (
-                    <div className="mt-2 pt-2 border-t border-border">
-                      <p className="text-xs font-medium">
-                        Dernière grille: {lastLayoutInfo.columns} colonnes
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {lastLayoutInfo.totalNodes} blocs • Espacement: {lastLayoutInfo.spacing}px
-                      </p>
-                    </div>
-                  )}
                 </div>
               </TooltipContent>
             </Tooltip>
@@ -1259,18 +1255,6 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
         )}
       </div>
 
-      {/* Informations sur le layout automatique (affiché temporairement) */}
-      {lastLayoutInfo && (
-        <div className="absolute bottom-4 left-4 bg-white shadow-lg rounded-lg border p-3 text-sm animate-in slide-in-from-left-2 duration-300">
-          <div className="flex items-center gap-2 text-green-600 mb-1">
-            <Sparkles className="w-4 h-4" />
-            <span className="font-medium">Layout appliqué !</span>
-          </div>
-          <div className="text-muted-foreground">
-            Organisation en grille {lastLayoutInfo.columns} colonnes • {lastLayoutInfo.totalNodes} blocs • Espacement {lastLayoutInfo.spacing}px
-          </div>
-        </div>
-      )}
 
       {/* Canvas vide */}
       {!isLoading && nodes.length === 0 && (

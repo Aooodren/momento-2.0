@@ -320,16 +320,58 @@ function NotionBlock({ data, selected }: NotionBlockProps) {
           )}
         </div>
 
-        {/* Handles pour les connexions */}
+        {/* Handles spécialisés Notion */}
+        {/* Inputs */}
         <Handle
           type="target"
           position={Position.Left}
-          className="w-3 h-3 bg-gray-400 border-2 border-white"
+          className="w-3 h-3 bg-blue-400 border-2 border-white"
+          id="query-filters"
+          style={{ top: '25%' }}
+        />
+        <Handle
+          type="target"
+          position={Position.Left}
+          className="w-3 h-3 bg-purple-400 border-2 border-white"
+          id="template-data"
+          style={{ top: '50%' }}
+        />
+        <Handle
+          type="target"
+          position={Position.Left}
+          className="w-3 h-3 bg-green-400 border-2 border-white"
+          id="content-updates"
+          style={{ top: '75%' }}
+        />
+        
+        {/* Outputs */}
+        <Handle
+          type="source"
+          position={Position.Right}
+          className="w-3 h-3 bg-orange-600 border-2 border-white"
+          id="page-content"
+          style={{ top: '20%' }}
         />
         <Handle
           type="source"
           position={Position.Right}
-          className="w-3 h-3 bg-gray-600 border-2 border-white"
+          className="w-3 h-3 bg-red-600 border-2 border-white"
+          id="database-records"
+          style={{ top: '40%' }}
+        />
+        <Handle
+          type="source"
+          position={Position.Right}
+          className="w-3 h-3 bg-indigo-600 border-2 border-white"
+          id="metadata"
+          style={{ top: '60%' }}
+        />
+        <Handle
+          type="source"
+          position={Position.Right}
+          className="w-3 h-3 bg-teal-600 border-2 border-white"
+          id="rich-text"
+          style={{ top: '80%' }}
         />
       </Card>
 

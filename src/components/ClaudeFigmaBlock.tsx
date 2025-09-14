@@ -451,18 +451,58 @@ Fournis une analyse détaillée et des recommandations.`
           )}
         </div>
 
-        {/* Handles pour les connexions */}
+        {/* Handles spécialisés Figma */}
+        {/* Inputs */}
+        <Handle
+          type="target"
+          position={Position.Left}
+          className="w-3 h-3 bg-blue-400 border-2 border-white"
+          id="design-files"
+          style={{ top: '30%' }}
+        />
         <Handle
           type="target"
           position={Position.Left}
           className="w-3 h-3 bg-purple-400 border-2 border-white"
-          id="figma-input"
+          id="prompt-context"
+          style={{ top: '50%' }}
+        />
+        <Handle
+          type="target"
+          position={Position.Left}
+          className="w-3 h-3 bg-green-400 border-2 border-white"
+          id="design-tokens"
+          style={{ top: '70%' }}
+        />
+        
+        {/* Outputs */}
+        <Handle
+          type="source"
+          position={Position.Right}
+          className="w-3 h-3 bg-orange-600 border-2 border-white"
+          id="analysis-text"
+          style={{ top: '25%' }}
+        />
+        <Handle
+          type="source"
+          position={Position.Right}
+          className="w-3 h-3 bg-red-600 border-2 border-white"
+          id="recommendations"
+          style={{ top: '45%' }}
         />
         <Handle
           type="source"
           position={Position.Right}
           className="w-3 h-3 bg-indigo-600 border-2 border-white"
-          id="analysis-output"
+          id="extracted-colors"
+          style={{ top: '65%' }}
+        />
+        <Handle
+          type="source"
+          position={Position.Right}
+          className="w-3 h-3 bg-teal-600 border-2 border-white"
+          id="component-list"
+          style={{ top: '85%' }}
         />
       </Card>
 

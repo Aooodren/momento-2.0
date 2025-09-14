@@ -221,24 +221,67 @@ export const LogicBlock = memo(({ data, selected }: LogicBlockProps) => {
     switch (data.logicType) {
       case 'group':
         return {
-          targets: [Position.Top, Position.Left],
-          sources: [Position.Bottom, Position.Right]
+          targets: [
+            { position: Position.Top, id: 'group-input', color: 'bg-blue-400', label: 'Input' },
+            { position: Position.Left, id: 'group-context', color: 'bg-purple-400', label: 'Context' }
+          ],
+          sources: [
+            { position: Position.Bottom, id: 'group-output', color: 'bg-green-600', label: 'Output' },
+            { position: Position.Right, id: 'group-summary', color: 'bg-orange-600', label: 'Summary' }
+          ]
         };
       case 'condition':
       case 'decision':
         return {
-          targets: [Position.Top],
-          sources: [Position.Bottom, Position.Right] // Plusieurs sorties pour les conditions
+          targets: [
+            { position: Position.Top, id: 'condition-data', color: 'bg-blue-400', label: 'Data' },
+            { position: Position.Left, id: 'condition-rules', color: 'bg-purple-400', label: 'Rules' }
+          ],
+          sources: [
+            { position: Position.Bottom, id: 'condition-true', color: 'bg-green-600', label: 'True' },
+            { position: Position.Right, id: 'condition-false', color: 'bg-red-600', label: 'False' }
+          ]
         };
       case 'merge':
         return {
-          targets: [Position.Top, Position.Left, Position.Right],
-          sources: [Position.Bottom]
+          targets: [
+            { position: Position.Top, id: 'merge-primary', color: 'bg-blue-400', label: 'Primary' },
+            { position: Position.Left, id: 'merge-secondary', color: 'bg-purple-400', label: 'Secondary' },
+            { position: Position.Right, id: 'merge-tertiary', color: 'bg-green-400', label: 'Tertiary' }
+          ],
+          sources: [
+            { position: Position.Bottom, id: 'merge-result', color: 'bg-orange-600', label: 'Merged' }
+          ]
+        };
+      case 'filter':
+        return {
+          targets: [
+            { position: Position.Left, id: 'filter-data', color: 'bg-blue-400', label: 'Data' },
+            { position: Position.Top, id: 'filter-criteria', color: 'bg-purple-400', label: 'Criteria' }
+          ],
+          sources: [
+            { position: Position.Right, id: 'filter-passed', color: 'bg-green-600', label: 'Passed' },
+            { position: Position.Bottom, id: 'filter-rejected', color: 'bg-gray-400', label: 'Rejected' }
+          ]
+        };
+      case 'transform':
+        return {
+          targets: [
+            { position: Position.Left, id: 'transform-input', color: 'bg-blue-400', label: 'Input' },
+            { position: Position.Top, id: 'transform-rules', color: 'bg-purple-400', label: 'Rules' }
+          ],
+          sources: [
+            { position: Position.Right, id: 'transform-output', color: 'bg-orange-600', label: 'Output' }
+          ]
         };
       default:
         return {
-          targets: [Position.Left],
-          sources: [Position.Right]
+          targets: [
+            { position: Position.Left, id: 'default-input', color: 'bg-blue-400', label: 'Input' }
+          ],
+          sources: [
+            { position: Position.Right, id: 'default-output', color: 'bg-green-600', label: 'Output' }
+          ]
         };
     }
   };
@@ -350,24 +393,28 @@ export const LogicBlock = memo(({ data, selected }: LogicBlockProps) => {
         </div>
       )}
 
-      {/* Handles de connexion dynamiques */}
-      {handleConfig.targets.map((position, index) => (
+      {/* Handles de connexion spécialisés selon la logique */}
+      {handleConfig.targets.map((handle, index) => (
         <Handle
           key={`target-${index}`}
           type="target"
-          position={position}
-          id={`target-${position}`}
-          className="w-3 h-3 bg-blue-500 border-2 border-white"
+          position={handle.position}
+          id={handle.id}
+          className={`w-3 h-3 ${handle.color} border-2 border-white`}
+          style={handle.position === Position.Left ? { top: `${25 + index * 25}%` } : 
+                 handle.position === Position.Top ? { left: `${25 + index * 25}%` } : {}}
         />
       ))}
       
-      {handleConfig.sources.map((position, index) => (
+      {handleConfig.sources.map((handle, index) => (
         <Handle
           key={`source-${index}`}
           type="source"
-          position={position}
-          id={`source-${position}`}
-          className="w-3 h-3 bg-green-500 border-2 border-white"
+          position={handle.position}
+          id={handle.id}
+          className={`w-3 h-3 ${handle.color} border-2 border-white`}
+          style={handle.position === Position.Right ? { top: `${25 + index * 25}%` } : 
+                 handle.position === Position.Bottom ? { left: `${25 + index * 25}%` } : {}}
         />
       ))}
     </Card>

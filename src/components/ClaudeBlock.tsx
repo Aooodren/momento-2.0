@@ -323,16 +323,58 @@ Cette analyse a été générée à partir de votre prompt : "${prompt.slice(0, 
           )}
         </div>
 
-        {/* Handles pour les connexions */}
+        {/* Handles spécialisés Claude AI */}
+        {/* Inputs */}
         <Handle
           type="target"
           position={Position.Left}
-          className="w-3 h-3 bg-orange-400 border-2 border-white"
+          className="w-3 h-3 bg-blue-400 border-2 border-white"
+          id="user-prompt"
+          style={{ top: '25%' }}
         />
+        <Handle
+          type="target"
+          position={Position.Left}
+          className="w-3 h-3 bg-purple-400 border-2 border-white"
+          id="context-data"
+          style={{ top: '45%' }}
+        />
+        <Handle
+          type="target"
+          position={Position.Left}
+          className="w-3 h-3 bg-green-400 border-2 border-white"
+          id="system-instructions"
+          style={{ top: '65%' }}
+        />
+        <Handle
+          type="target"
+          position={Position.Left}
+          className="w-3 h-3 bg-yellow-400 border-2 border-white"
+          id="memory-context"
+          style={{ top: '85%' }}
+        />
+        
+        {/* Outputs */}
         <Handle
           type="source"
           position={Position.Right}
           className="w-3 h-3 bg-orange-600 border-2 border-white"
+          id="ai-response"
+          style={{ top: '30%' }}
+        />
+        <Handle
+          type="source"
+          position={Position.Right}
+          className="w-3 h-3 bg-red-600 border-2 border-white"
+          id="structured-data"
+          style={{ top: '50%' }}
+        />
+        <Handle
+          type="source"
+          position={Position.Right}
+          className="w-3 h-3 bg-indigo-600 border-2 border-white"
+          id="confidence-score"
+          style={{ top: '70%' }}
         />
       </Card>
 
