@@ -11,7 +11,6 @@ import {
   ChevronLeft,
   ChevronRight,
   FolderOpen,
-  Heart,
   Settings,
   Plus,
   FileText,
@@ -40,7 +39,7 @@ interface ProjectDetails {
   id: string;
   title: string;
   type: string;
-  from: 'myproject' | 'liked';
+  from: 'myproject';
 }
 
 interface EditorTab {
@@ -53,7 +52,7 @@ interface EditorTab {
 
 interface NavigationSidebarProps {
   currentPage: string;
-  onPageChange: (page: 'myproject' | 'liked' | 'integrations') => void;
+  onPageChange: (page: 'myproject' | 'integrations') => void;
   collapsed: boolean;
   onToggleCollapse: () => void;
   selectedProject?: ProjectDetails | null;
@@ -61,7 +60,7 @@ interface NavigationSidebarProps {
   onSettingsClick?: () => void;
   onProjectTabClose?: () => void;
   isOnProjectPage?: boolean;
-  previousPage?: 'myproject' | 'liked';
+  previousPage?: 'myproject';
 }
 
 export default function NavigationSidebar({ 
@@ -158,7 +157,7 @@ export default function NavigationSidebar({
   };
 
   // Navigation vers les pages principales sans fermer les onglets
-  const handleMainPageNavigation = (page: 'myproject' | 'liked' | 'integrations') => {
+  const handleMainPageNavigation = (page: 'myproject' | 'integrations') => {
     // Ne plus fermer automatiquement les onglets - les garder persistants
     onPageChange(page);
   };
@@ -377,13 +376,6 @@ export default function NavigationSidebar({
                 onClick={() => handleMainPageNavigation('myproject')}
                 collapsed={collapsed}
                 count={projects.length}
-              />
-              <NavigationItem
-                icon={Heart}
-                label="Liked"
-                isActive={currentPage === 'liked'}
-                onClick={() => handleMainPageNavigation('liked')}
-                collapsed={collapsed}
               />
               <NavigationItem
                 icon={Link2}

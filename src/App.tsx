@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import NavigationSidebar from "./components/NavigationSidebar";
 import MyProjectPage from "./components/MyProjectPage";
-import LikedPage from "./components/LikedPage";
 import ProjectDetailPage from "./components/ProjectDetailPage";
 import EditorPage from "./components/EditorPage";
 import SettingsPage from "./components/SettingsPageNew";
@@ -17,13 +16,13 @@ import { Loader2 } from "lucide-react";
 import { useAuth, AuthContext } from "./hooks/useAuth";
 import { ThemeProvider } from "./components/ThemeProvider";
 
-type PageType = 'myproject' | 'liked' | 'detail' | 'editor' | 'settings' | 'share' | 'project-edit' | 'invitation' | 'integrations' | 'oauth-callback' | 'auth-callback';
+type PageType = 'myproject' | 'detail' | 'editor' | 'settings' | 'share' | 'project-edit' | 'invitation' | 'integrations' | 'oauth-callback' | 'auth-callback';
 
 interface ProjectDetails {
   id: string; // Changed to string for consistency with KV store
   title: string;
   type: string;
-  from: 'myproject' | 'liked';
+  from: 'myproject';
   description?: string;
   startDate?: Date;
   endDate?: Date;
@@ -35,7 +34,7 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState<PageType>('myproject');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [selectedProject, setSelectedProject] = useState<ProjectDetails | null>(null);
-  const [previousPage, setPreviousPage] = useState<'myproject' | 'liked'>('myproject');
+  const [previousPage, setPreviousPage] = useState<'myproject'>('myproject');
   const [invitationToken, setInvitationToken] = useState<string | null>(null);
 
   // Check for invitation parameters in URL on mount
@@ -78,7 +77,7 @@ export default function App() {
   // Navigation vers une page principale (sans fermeture des onglets)
   const navigateToPage = (page: PageType) => {
     // Sauvegarder la page précédente si c'est une page principale
-    if (page === 'myproject' || page === 'liked') {
+    if (page === 'myproject') {
       setPreviousPage(page);
     }
     
@@ -125,7 +124,7 @@ export default function App() {
     
     // Comportement par défaut : si on était déjà sur ce projet, rester sur la même page
     // Sinon, aller vers la page de détail
-    if (selectedProject?.id !== project.id || currentPage === 'myproject' || currentPage === 'liked') {
+    if (selectedProject?.id !== project.id || currentPage === 'myproject') {
       setCurrentPage('detail');
     }
   };
@@ -250,9 +249,6 @@ export default function App() {
     switch (currentPage) {
       case 'myproject':
         return <MyProjectPage onProjectSelect={navigateToProject} />;
-      
-      case 'liked':
-        return <LikedPage onProjectSelect={navigateToProject} />;
       
       case 'detail':
         if (!selectedProject) return <MyProjectPage onProjectSelect={navigateToProject} />;
