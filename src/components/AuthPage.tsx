@@ -104,7 +104,7 @@ export default function AuthPage() {
         {/* Logo Momento */}
         <div className="flex justify-center mb-8">
           <img 
-            src="/momento-logo.svg" 
+            src="/momento-logo-black.png" 
             alt="Momento" 
             className="h-12 w-auto"
           />
