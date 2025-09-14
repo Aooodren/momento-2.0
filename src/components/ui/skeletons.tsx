@@ -1,29 +1,36 @@
 import { Skeleton } from "./skeleton";
 import { Card } from "./card";
 
-// Skeleton pour un projet dans la liste
+// Skeleton pour un projet dans la liste - Version moderne
 export function ProjectCardSkeleton() {
   return (
-    <Card className="p-6">
-      <div className="space-y-4">
-        <div className="flex items-start justify-between">
-          <div className="space-y-2 flex-1">
-            <Skeleton className="h-5 w-3/4" />
-            <Skeleton className="h-4 w-1/2" />
+    <Card className="p-0 rounded-xl overflow-hidden">
+      {/* Skeleton pour la miniature */}
+      <div className="aspect-video bg-gray-200 animate-pulse rounded-t-xl" />
+      
+      {/* Contenu */}
+      <div className="p-5 space-y-4">
+        <div className="space-y-3">
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-3/4 rounded-lg" />
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-5 w-16 rounded-full" />
+              <Skeleton className="h-3 w-20 rounded" />
+            </div>
           </div>
-          <Skeleton className="h-6 w-16 rounded-full" />
-        </div>
-        <div className="space-y-2">
-          <Skeleton className="h-3 w-full" />
-          <Skeleton className="h-3 w-2/3" />
-        </div>
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-4 w-24" />
-          <div className="flex gap-2">
-            <Skeleton className="h-6 w-6 rounded-full" />
-            <Skeleton className="h-6 w-6 rounded-full" />
-            <Skeleton className="h-6 w-6 rounded-full" />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-full rounded" />
+            <Skeleton className="h-4 w-2/3 rounded" />
           </div>
+        </div>
+        
+        {/* Footer */}
+        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-2 w-2 rounded-full" />
+            <Skeleton className="h-3 w-24 rounded" />
+          </div>
+          <Skeleton className="h-4 w-12 rounded-full" />
         </div>
       </div>
     </Card>

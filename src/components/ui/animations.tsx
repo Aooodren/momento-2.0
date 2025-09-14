@@ -163,7 +163,7 @@ export function HoverCard({ children, className, ...props }: React.HTMLAttribute
   return (
     <div 
       className={cn(
-        "transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:-translate-y-1 cursor-pointer",
+        "transition-all duration-300 hover:-translate-y-1 cursor-pointer",
         className
       )} 
       {...props}

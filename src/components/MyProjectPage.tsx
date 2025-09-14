@@ -198,60 +198,65 @@ export default function MyProjectPage({ onProjectSelect }: MyProjectPageProps) {
                 onThumbnailImported={handleThumbnailImported}
               >
               <HoverCard 
-                className="group relative overflow-hidden bg-card border border-border hover:border-primary/20 transition-colors duration-200 cursor-pointer p-0"
+                className="group relative overflow-hidden bg-white border border-gray-200 hover:border-gray-300 hover:shadow-xl transition-all duration-300 cursor-pointer p-0 rounded-xl"
                 onClick={() => handleCardClick(project)}
               >
 
                 {/* Miniature avec overlay gradient */}
-                <div className="relative overflow-hidden">
+                <div className="relative overflow-hidden rounded-t-xl">
                   <ProjectThumbnail
                     projectId={project.id}
                     projectTitle={project.title}
                     projectType={project.type}
-                    className="aspect-video"
+                    className="aspect-video w-full object-cover group-hover:scale-105 transition-transform duration-300"
                     showOverlay={false}
                   />
+                  {/* Overlay subtil au survol */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300" />
                 </div>
                 
                 {/* Contenu */}
-                <div className="pt-[0px] pr-[17px] pb-[17px] pl-[17px]">
+                <div className="p-5">
                   {/* En-tête avec titre et type */}
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-foreground mb-1 line-clamp-1">
+                  <div className="mb-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="font-semibold text-gray-900 text-base line-clamp-1 group-hover:text-gray-800 transition-colors">
                         {project.title}
                       </h3>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs py-0.5 px-2">
-                          {project.type}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(project.created_at).toLocaleDateString('fr-FR', {
-                            day: 'numeric',
-                            month: 'short'
-                          })}
-                        </span>
-                      </div>
                     </div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Badge variant="secondary" className="text-xs py-1 px-2.5 bg-gray-100 text-gray-700 border-0 rounded-full font-medium">
+                        {project.type}
+                      </Badge>
+                      <span className="text-xs text-gray-500">
+                        Créé le {new Date(project.created_at).toLocaleDateString('fr-FR', {
+                          day: 'numeric',
+                          month: 'short'
+                        })}
+                      </span>
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed min-h-[2.5rem]">
+                      {project.description || "Aucune description disponible pour ce projet."}
+                    </p>
                   </div>
 
-                  {/* Description */}
-                  <p className="text-sm text-muted-foreground line-clamp-2 m-[0px] min-h-[2.5rem]">
-                    {project.description || "Aucune description disponible pour ce projet."}
-                  </p>
-
-                  {/* Métadonnées du footer */}
-                  <div className="flex items-center justify-between pt-3 border-t border-border/50">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <div className="w-2 h-2 bg-primary rounded-full" />
-                      <span>Mis à jour {new Date(project.updated_at).toLocaleDateString('fr-FR')}</span>
+                  {/* Footer moderne */}
+                  <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                      <span className="text-xs text-gray-500">
+                        Mis à jour {new Date(project.updated_at).toLocaleDateString('fr-FR')}
+                      </span>
                     </div>
                     
-                    {/* Indicateur d'activité récente */}
+                    {/* Indicateur d'activité récente avec design moderne */}
                     {new Date(project.updated_at).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000 && (
-                      <Badge variant="secondary" className="text-xs bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800">
-                        Récent
-                      </Badge>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                        <span className="text-xs text-green-600 font-medium">Récent</span>
+                      </div>
                     )}
                   </div>
                 </div>
