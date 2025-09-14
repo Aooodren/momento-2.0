@@ -39,6 +39,8 @@ import AdvancedBlockEditDialog from './AdvancedBlockEditDialog';
 import LogicBlockEditDialog from './LogicBlockEditDialog';
 import CollaboratorCursors from './CollaboratorCursors';
 import { useNotify } from './ui/notifications';
+import { CanvasGridSkeleton } from './ui/skeletons';
+import { EmptyCanvasEmptyState } from './ui/empty-states';
 
 interface ProjectDetails {
   id: string;
@@ -1256,35 +1258,21 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
       </div>
 
 
+      {/* Loading state pour canvas */}
+      {isLoading && (
+        <div className="absolute inset-0 bg-gray-50">
+          <div className="flex items-center gap-3 p-6">
+            <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+            <span className="text-sm text-muted-foreground">Chargement du canvas...</span>
+          </div>
+          <CanvasGridSkeleton count={3} />
+        </div>
+      )}
+
       {/* Canvas vide */}
       {!isLoading && nodes.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
-          <div className="text-center max-w-md p-8">
-            <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center">
-              <Plus className="w-8 h-8 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Canvas vide</h3>
-            <p className="text-muted-foreground mb-6">
-              Commencez par créer votre premier bloc pour structurer votre projet avec des inputs/outputs configurables.
-            </p>
-            
-            <div className="flex flex-col gap-2">
-              <Button onClick={handleCreateStandardBlock} className="gap-2">
-                <Plus className="w-4 h-4" />
-                Créer un bloc avancé
-              </Button>
-              <div className="text-center">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleCreateDemoData}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  Ou créer des blocs d'exemple (Notion, OpenAI, Figma)
-                </Button>
-              </div>
-            </div>
-          </div>
+          <EmptyCanvasEmptyState onCreateBlock={handleCreateStandardBlock} />
         </div>
       )}
 

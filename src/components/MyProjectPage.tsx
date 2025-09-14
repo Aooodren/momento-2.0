@@ -5,6 +5,8 @@ import ProjectContextMenu from "./ProjectContextMenu";
 import { useSupabaseProjects } from "../hooks/useSupabaseProjects";
 import { Button } from "./ui/button";
 import { Plus, Loader2, AlertCircle, RefreshCw, Eye, Edit3, Share2 } from "lucide-react";
+import { ProjectGridSkeleton } from "./ui/skeletons";
+import { NoProjectsEmptyState } from "./ui/empty-states";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Badge } from "./ui/badge";
 import ShareProjectDialog from "./ShareProjectDialog";
@@ -163,35 +165,18 @@ export default function MyProjectPage({ onProjectSelect }: MyProjectPageProps) {
         )}
 
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-16">
-            <div className="relative">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              </div>
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+              <span className="text-sm text-muted-foreground">Chargement de vos projets...</span>
             </div>
-            <h3 className="font-medium mb-2">Chargement de vos projets</h3>
-            <p className="text-sm text-muted-foreground">Veuillez patienter...</p>
+            <ProjectGridSkeleton count={6} />
           </div>
         ) : supabaseProjects.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-6">
-              <Plus className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <h3 className="font-medium mb-2">Aucun projet trouvé</h3>
-            <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
-              Créez votre premier projet pour commencer à organiser vos idées et collaborer avec votre équipe.
-            </p>
-            <div className="flex gap-3 justify-center">
-              <Button variant="outline" onClick={handleInitDemo} className="gap-2">
-                <RefreshCw className="h-4 w-4" />
-                Charger les données de démo
-              </Button>
-              <Button onClick={handleCreateProject} className="gap-2">
-                <Plus className="h-4 w-4" />
-                Créer un projet
-              </Button>
-            </div>
-          </div>
+          <NoProjectsEmptyState 
+            onCreateProject={handleCreateProject}
+            onInitDemo={handleInitDemo}
+          />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {supabaseProjects.map((project, index) => (
