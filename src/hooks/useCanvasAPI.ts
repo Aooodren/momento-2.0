@@ -1,331 +1,291 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '../utils/supabase/client';
-import { 
-  Block, 
-  BlockRelation as Relation, 
-  Project, 
-  CreateBlockRequest,
-  UpdateBlockRequest,
-  CreateRelationRequest,
-  BatchUpdatePositionsRequest,
-  CanvasData
-} from '../types/database';
+import { projectId, publicAnonKey } from '../utils/supabase/info';
+
+const API_BASE = `https://${projectId}.supabase.co/functions/v1/make-server-6c8ffc9e`;
+
+interface Block {
+  id: string; // Changed to string for KV store
+  project_id: string; // Changed to string for KV store
+  title: string;
+  description?: string;
+  type: string;
+  status: string;
+  position_x: number;
+  position_y: number;
+  width?: number;
+  height?: number;
+  metadata?: any;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Relation {
+  id: string; // Changed to string for KV store
+  project_id: string; // Changed to string for KV store
+  source_block_id: string; // Changed to string for KV store
+  target_block_id: string; // Changed to string for KV store
+  type: string;
+  metadata?: any;
+  created_at: string;
+  source_block?: Block;
+  target_block?: Block;
+}
+
+interface Project {
+  id: string; // Changed to string for KV store
+  title: string;
+  description?: string;
+  type: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export function useCanvasAPI() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Direct Supabase client calls - more reliable than edge functions
-  const handleError = (error: any, defaultMessage: string) => {
-    console.error(defaultMessage, error);
-    const message = error?.message || error?.error_description || defaultMessage;
-    setError(message);
-    return null;
-  };
+  const apiCall = useCallback(async (endpoint: string, options: RequestInit = {}) => {
+    const url = `${API_BASE}${endpoint}`;
+    
+    // Get access token from current session
+    const { data: { session } } = await supabase.auth.getSession();
+    const accessToken = session?.access_token || publicAnonKey;
+    
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`,
+      ...options.headers,
+    };
 
-  const clearError = () => setError(null);
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (err) {
+      console.error('API Error:', err);
+      throw err;
+    }
+  }, []);
 
   // Projects API
   const getProjects = useCallback(async (): Promise<Project[]> => {
     setLoading(true);
-    clearError();
+    setError(null);
     try {
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data as Project[] || [];
+      const data = await apiCall('/projects');
+      return data.projects || [];
     } catch (err) {
-      return handleError(err, 'Failed to fetch projects') || [];
+      setError(err instanceof Error ? err.message : 'Failed to fetch projects');
+      return [];
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [apiCall]);
 
   const createProject = useCallback(async (project: Partial<Project>): Promise<Project | null> => {
     setLoading(true);
-    clearError();
+    setError(null);
     try {
-      const { data, error } = await supabase
-        .from('projects')
-        .insert({
-          title: project.title || 'Nouveau Projet',
-          description: project.description,
-          type: project.type || 'design-thinking',
-          metadata: project.metadata || {},
-          canvas_config: project.canvas_config || {}
-        })
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data as Project;
+      const data = await apiCall('/projects', {
+        method: 'POST',
+        body: JSON.stringify(project),
+      });
+      return data.project;
     } catch (err) {
-      return handleError(err, 'Failed to create project');
+      setError(err instanceof Error ? err.message : 'Failed to create project');
+      return null;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [apiCall]);
 
   const getProject = useCallback(async (projectId: string): Promise<Project | null> => {
     setLoading(true);
-    clearError();
+    setError(null);
     try {
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('id', projectId)
-        .single();
-      
-      if (error) throw error;
-      return data as Project;
+      const data = await apiCall(`/projects/${projectId}`);
+      return data.project;
     } catch (err) {
-      return handleError(err, 'Failed to fetch project');
+      setError(err instanceof Error ? err.message : 'Failed to fetch project');
+      return null;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [apiCall]);
 
   // Blocks API
   const getBlocks = useCallback(async (projectId: string): Promise<Block[]> => {
     setLoading(true);
-    clearError();
+    setError(null);
     try {
-      const { data, error } = await supabase
-        .from('blocks')
-        .select('*')
-        .eq('project_id', projectId)
-        .is('deleted_at', null)
-        .order('created_at', { ascending: true });
-      
-      if (error) throw error;
-      return data as Block[] || [];
+      const data = await apiCall(`/projects/${projectId}/blocks`);
+      return data.blocks || [];
     } catch (err) {
-      return handleError(err, 'Failed to fetch blocks') || [];
+      setError(err instanceof Error ? err.message : 'Failed to fetch blocks');
+      return [];
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [apiCall]);
 
-  const createBlock = useCallback(async (projectId: string, blockData: CreateBlockRequest): Promise<Block | null> => {
+  const createBlock = useCallback(async (projectId: string, block: Partial<Block>): Promise<Block | null> => {
     setLoading(true);
-    clearError();
+    setError(null);
     try {
-      const { data, error } = await supabase
-        .from('blocks')
-        .insert({
-          title: blockData.title,
-          description: blockData.description,
-          type: blockData.type || 'standard',
-          project_id: projectId,
-          position_x: blockData.position_x || Math.random() * 400 + 100,
-          position_y: blockData.position_y || Math.random() * 300 + 100,
-          config: blockData.config || {},
-          inputs: blockData.inputs || [],
-          outputs: blockData.outputs || [],
-          metadata: blockData.metadata || {}
-        })
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data as Block;
+      const data = await apiCall(`/projects/${projectId}/blocks`, {
+        method: 'POST',
+        body: JSON.stringify(block),
+      });
+      return data.block;
     } catch (err) {
-      return handleError(err, 'Failed to create block');
+      setError(err instanceof Error ? err.message : 'Failed to create block');
+      return null;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [apiCall]);
 
-  const updateBlock = useCallback(async (blockId: string, updates: UpdateBlockRequest): Promise<Block | null> => {
-    clearError();
+  const updateBlock = useCallback(async (blockId: string, updates: Partial<Block>): Promise<Block | null> => {
+    setError(null);
     try {
-      const { data, error } = await supabase
-        .from('blocks')
-        .update(updates)
-        .eq('id', blockId)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data as Block;
+      const data = await apiCall(`/blocks/${blockId}`, {
+        method: 'PUT',
+        body: JSON.stringify(updates),
+      });
+      return data.block;
     } catch (err) {
-      return handleError(err, 'Failed to update block');
+      setError(err instanceof Error ? err.message : 'Failed to update block');
+      return null;
     }
-  }, []);
+  }, [apiCall]);
 
   const deleteBlock = useCallback(async (blockId: string): Promise<boolean> => {
     setLoading(true);
-    clearError();
+    setError(null);
     try {
-      // Soft delete by setting deleted_at timestamp
-      const { error } = await supabase
-        .from('blocks')
-        .update({ deleted_at: new Date().toISOString() })
-        .eq('id', blockId);
-      
-      if (error) throw error;
+      await apiCall(`/blocks/${blockId}`, {
+        method: 'DELETE',
+      });
       return true;
     } catch (err) {
-      handleError(err, 'Failed to delete block');
+      setError(err instanceof Error ? err.message : 'Failed to delete block');
       return false;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [apiCall]);
 
-  const batchUpdatePositions = useCallback(async (updates: BatchUpdatePositionsRequest['updates']): Promise<boolean> => {
+  const batchUpdatePositions = useCallback(async (updates: Array<{id: string, position_x: number, position_y: number}>): Promise<boolean> => {
     try {
-      // Use Supabase's batch update functionality
-      const updatePromises = updates.map(update => 
-        supabase
-          .from('blocks')
-          .update({ 
-            position_x: update.position_x, 
-            position_y: update.position_y 
-          })
-          .eq('id', update.id)
-      );
-      
-      const results = await Promise.all(updatePromises);
-      const hasError = results.some(result => result.error);
-      
-      if (hasError) {
-        console.error('Some position updates failed');
-        return false;
-      }
-      
-      return true;
+      const response = await apiCall('/blocks/batch-update-positions', {
+        method: 'POST',
+        body: JSON.stringify({ updates }),
+      });
+      return response.success || true;
     } catch (err) {
       console.error('Failed to batch update positions:', err);
       return false;
     }
-  }, []);
+  }, [apiCall]);
 
   // Canvas API
-  const saveCanvasData = useCallback(async (projectId: string, canvasData: CanvasData): Promise<boolean> => {
+  const saveCanvasData = useCallback(async (projectId: string, canvasData: any): Promise<boolean> => {
     try {
-      const { data: user } = await supabase.auth.getUser();
-      
-      // Create a canvas snapshot
-      const { error } = await supabase
-        .from('canvas_snapshots')
-        .insert({
-          project_id: projectId,
-          canvas_data: canvasData,
-          is_auto_save: true,
-          blocks_count: canvasData.nodes?.length || 0,
-          relations_count: canvasData.edges?.length || 0,
-          created_by: user.user?.id
-        });
-      
-      if (error) throw error;
-      return true;
+      const response = await apiCall(`/projects/${projectId}/canvas`, {
+        method: 'PUT',
+        body: JSON.stringify({ canvas_data: canvasData }),
+      });
+      return response?.success || true;
     } catch (err) {
       console.error('Failed to save canvas data:', err);
       return false;
     }
-  }, []);
+  }, [apiCall]);
 
   // Relations API
   const getRelations = useCallback(async (projectId: string): Promise<Relation[]> => {
     setLoading(true);
-    clearError();
+    setError(null);
     try {
-      const { data, error } = await supabase
-        .from('block_relations')
-        .select('*')
-        .eq('project_id', projectId)
-        .is('deleted_at', null)
-        .order('created_at', { ascending: true });
-      
-      if (error) throw error;
-      return data as Relation[] || [];
+      const data = await apiCall(`/projects/${projectId}/relations`);
+      return data.relations || [];
     } catch (err) {
-      return handleError(err, 'Failed to fetch relations') || [];
+      setError(err instanceof Error ? err.message : 'Failed to fetch relations');
+      return [];
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [apiCall]);
 
-  const createRelation = useCallback(async (projectId: string, relationData: CreateRelationRequest): Promise<Relation | null> => {
+  const createRelation = useCallback(async (projectId: string, relation: Partial<Relation>): Promise<Relation | null> => {
     setLoading(true);
-    clearError();
+    setError(null);
     try {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) throw new Error('Not authenticated');
-
-      const { data, error } = await supabase
-        .from('block_relations')
-        .insert({
-          ...relationData,
-          project_id: projectId,
-          created_by: user.user.id,
-          type: relationData.type || 'connection',
-          style: relationData.style || {},
-          animated: relationData.animated || false,
-          data_mapping: relationData.data_mapping || {},
-          conditions: relationData.conditions || {},
-          metadata: relationData.metadata || {}
-        })
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data as Relation;
+      const data = await apiCall(`/projects/${projectId}/relations`, {
+        method: 'POST',
+        body: JSON.stringify(relation),
+      });
+      return data.relation;
     } catch (err) {
-      return handleError(err, 'Failed to create relation');
+      setError(err instanceof Error ? err.message : 'Failed to create relation');
+      return null;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [apiCall]);
 
   const deleteRelation = useCallback(async (relationId: string): Promise<boolean> => {
     setLoading(true);
-    clearError();
+    setError(null);
     try {
-      // Soft delete by setting deleted_at timestamp
-      const { error } = await supabase
-        .from('block_relations')
-        .update({ deleted_at: new Date().toISOString() })
-        .eq('id', relationId);
-      
-      if (error) throw error;
+      await apiCall(`/relations/${relationId}`, {
+        method: 'DELETE',
+      });
       return true;
     } catch (err) {
-      handleError(err, 'Failed to delete relation');
+      setError(err instanceof Error ? err.message : 'Failed to delete relation');
       return false;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [apiCall]);
 
   // Initialize demo data
   const initDemo = useCallback(async (): Promise<any> => {
     setLoading(true);
-    clearError();
+    setError(null);
     try {
-      // This would be implemented as needed
-      console.log('Demo initialization not implemented yet');
-      return { success: true };
+      const data = await apiCall('/init-demo', {
+        method: 'POST',
+      });
+      return data;
     } catch (err) {
-      return handleError(err, 'Failed to initialize demo');
+      setError(err instanceof Error ? err.message : 'Failed to initialize demo');
+      return null;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [apiCall]);
 
   // Health check
   const checkHealth = useCallback(async (): Promise<boolean> => {
     try {
-      const { data, error } = await supabase.from('projects').select('id').limit(1);
-      return !error;
+      await apiCall('/health');
+      return true;
     } catch (err) {
       return false;
     }
-  }, []);
+  }, [apiCall]);
 
   return {
     loading,
@@ -352,5 +312,4 @@ export function useCanvasAPI() {
   };
 }
 
-// Re-export types for backward compatibility
-export type { Block, BlockRelation as Relation, Project } from '../types/database';
+export type { Block, Relation, Project };
