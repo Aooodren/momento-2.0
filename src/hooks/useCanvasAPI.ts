@@ -119,22 +119,16 @@ export function useCanvasAPI() {
       const { data, error } = await supabase
         .from('blocks')
         .insert({
-          ...blockData,
+          title: blockData.title,
+          description: blockData.description,
+          type: blockData.type || 'standard',
           project_id: projectId,
-          created_by: user.user.id,
-          status: 'active',
           position_x: blockData.position_x || Math.random() * 400 + 100,
           position_y: blockData.position_y || Math.random() * 300 + 100,
-          z_index: 0,
-          collapsed: false,
-          hidden: false,
-          locked: false,
           config: blockData.config || {},
           inputs: blockData.inputs || [],
           outputs: blockData.outputs || [],
-          metadata: blockData.metadata || {},
-          execution_config: {},
-          version: 1
+          metadata: blockData.metadata || {}
         })
         .select()
         .single();
