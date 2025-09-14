@@ -256,6 +256,9 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
       setRelations(relationsData);
 
       // Convertir les blocs en nœuds ReactFlow
+      console.log('📍 EditorPage - Loading blocks with positions:', 
+        blocksData.map(b => `${b.title}: (${b.position_x}, ${b.position_y})`));
+      
       const flowNodes: Node[] = blocksData.map((block) => {
         const isLogicBlock = block.type === 'logic' || block.metadata?.logicType;
         const isClaudeBlock = block.type === 'claude';
@@ -420,7 +423,7 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
       console.log('EditorPage - Saving position updates:', updates);
       batchUpdatePositions(updates).then((success: boolean) => {
         if (success) {
-          console.log('EditorPage - Position updates saved successfully');
+          console.log('✅ EditorPage - Position updates saved successfully');
           setLastSaved(new Date());
           setPendingChanges(false);
           positionUpdatesRef.current.clear();
@@ -449,11 +452,20 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
   // Gestionnaire de déplacement de nœuds
   const handleNodeDragStop = useCallback((_, node: Node) => {
     const blockId = node.id;
-    console.log(`EditorPage - Position update for block: ${blockId}`);
+    console.log(`EditorPage - Position update for block: ${blockId} to (${node.position.x}, ${node.position.y})`);
+    
+    // Mettre à jour immédiatement dans l'état local
+    setBlocks((prevBlocks) =>
+      prevBlocks.map((block) =>
+        block.id === blockId
+          ? { ...block, position_x: node.position.x, position_y: node.position.y }
+          : block
+      )
+    );
     
     positionUpdatesRef.current.set(blockId, {
-      position_x: node.position.x,
-      position_y: node.position.y,
+      position_x: Math.round(node.position.x),
+      position_y: Math.round(node.position.y),
     });
     
     setPendingChanges(true);
