@@ -21,6 +21,7 @@ export interface AuthState {
 export interface AuthActions {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, name?: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (data: { name?: string; avatar_url?: string }) => Promise<void>;
   clearError: () => void;
@@ -121,6 +122,31 @@ export const useAuth = (): AuthState & AuthActions => {
     }
   };
 
+  // Connexion avec Google
+  const signInWithGoogle = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erreur lors de la connexion Google';
+      setError(message);
+      setLoading(false);
+      throw new Error(message);
+    }
+    // Le loading sera désactivé par l'auth state change
+  };
+
   // Déconnexion
   const signOut = async () => {
     setLoading(true);
@@ -219,6 +245,7 @@ export const useAuth = (): AuthState & AuthActions => {
     isAuthenticated: !!user,
     signIn,
     signUp,
+    signInWithGoogle,
     signOut,
     updateProfile,
     clearError,

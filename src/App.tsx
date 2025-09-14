@@ -8,6 +8,7 @@ import SettingsPage from "./components/SettingsPageNew";
 import SharePage from "./components/SharePage";
 import ProjectEditPage from "./components/ProjectEditPage";
 import AuthPage from "./components/AuthPage";
+import AuthCallbackPage from "./components/AuthCallbackPage";
 import InvitationPageSupabase from "./components/InvitationPageSupabase";
 import TokenInvitationPage from "./components/TokenInvitationPage";
 import IntegrationsPage from "./components/IntegrationsPage";
@@ -16,7 +17,7 @@ import { Loader2 } from "lucide-react";
 import { useAuth, AuthContext } from "./hooks/useAuth";
 import { ThemeProvider } from "./components/ThemeProvider";
 
-type PageType = 'myproject' | 'liked' | 'detail' | 'editor' | 'settings' | 'share' | 'project-edit' | 'invitation' | 'integrations' | 'oauth-callback';
+type PageType = 'myproject' | 'liked' | 'detail' | 'editor' | 'settings' | 'share' | 'project-edit' | 'invitation' | 'integrations' | 'oauth-callback' | 'auth-callback';
 
 interface ProjectDetails {
   id: string; // Changed to string for consistency with KV store
@@ -43,6 +44,12 @@ export default function App() {
     const projectParam = urlParams.get('project');
     const roleParam = urlParams.get('role');
     const token = urlParams.get('token');
+    
+    // Check for Auth callback (Google OAuth)
+    if (window.location.pathname.includes('/auth/callback')) {
+      setCurrentPage('auth-callback');
+      return;
+    }
     
     // Check for OAuth callback (Notion, etc.)
     if (window.location.pathname.includes('/integrations/callback/')) {
@@ -274,6 +281,9 @@ export default function App() {
 
       case 'integrations':
         return <IntegrationsPage onBack={() => navigateToPage(previousPage)} />;
+
+      case 'auth-callback':
+        return <AuthCallbackPage />;
 
       case 'oauth-callback':
         // Déterminer quel service OAuth selon l'URL

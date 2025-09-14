@@ -6,10 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Alert, AlertDescription } from './ui/alert';
 import { Loader2, Eye, EyeOff, Mail, Lock, User, Palette } from 'lucide-react';
+import { FaGoogle } from 'react-icons/fa';
 import { useAuth } from '../hooks/useAuth';
 
 export default function AuthPage() {
-  const { signIn, signUp, loading, error, clearError } = useAuth();
+  const { signIn, signUp, signInWithGoogle, loading, error, clearError } = useAuth();
   
   // État des formulaires
   const [signInData, setSignInData] = useState({
@@ -83,6 +84,17 @@ export default function AuthPage() {
     } catch (error) {
       // L'erreur est déjà gérée par le hook
       console.error('Sign up error:', error);
+    }
+  };
+
+  // Gestion de la connexion Google
+  const handleGoogleSignIn = async () => {
+    clearError();
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      // L'erreur est déjà gérée par le hook useAuth
+      console.error('Google sign in error:', error);
     }
   };
 
@@ -172,6 +184,28 @@ export default function AuthPage() {
                     )}
                   </Button>
                 </form>
+
+                {/* Séparateur */}
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">Ou</span>
+                  </div>
+                </div>
+
+                {/* Bouton Google */}
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="w-full" 
+                  onClick={handleGoogleSignIn}
+                  disabled={loading}
+                >
+                  <FaGoogle className="mr-2 h-4 w-4 text-red-500" />
+                  Continuer avec Google
+                </Button>
               </TabsContent>
 
               {/* Formulaire d'inscription */}
