@@ -43,7 +43,7 @@ import { CanvasGridSkeleton } from './ui/skeletons';
 import { EmptyCanvasEmptyState } from './ui/empty-states';
 import { FadeIn, PressableButton, HoverCard, ScrollTrigger } from './ui/animations';
 import { useCanvasShortcuts } from '../hooks/useKeyboardShortcuts';
-import { NavButton, CTAButton } from './ui/premium-button';
+import { SimpleButton, CTAButton } from './ui/premium-button';
 
 interface ProjectDetails {
   id: string;
@@ -953,10 +953,10 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
       {/* Header */}
       <div className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-6 flex-shrink-0">
         <div className="flex items-center gap-4">
-          <NavButton onClick={onBack} className="gap-2">
+          <SimpleButton variant="outline" size="sm" onClick={onBack} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
             Retour
-          </NavButton>
+          </SimpleButton>
           <div className="border-l border-gray-300 h-6"></div>
           {/* Nom du projet éditable */}
           {isEditingProjectName ? (
@@ -1157,11 +1157,8 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
           {/* Menu de création de blocs */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <CTAButton 
-                size="sm" 
-                className="gap-2"
-                icon={<Plus className="w-4 h-4" />}
-              >
+              <CTAButton size="sm" className="gap-2">
+                <Plus className="w-4 h-4" />
                 Nouveau bloc
                 <ChevronDown className="w-3 h-3" />
               </CTAButton>

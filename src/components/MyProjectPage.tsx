@@ -143,12 +143,13 @@ export default function MyProjectPage({ onProjectSelect }: MyProjectPageProps) {
                   <CTAButton 
                     disabled={isCreatingProject}
                     data-testid="create-project-button"
-                    icon={isCreatingProject ? (
+                    className="gap-2"
+                  >
+                    {isCreatingProject ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       <Plus className="h-4 w-4" />
                     )}
-                  >
                     Nouveau projet
                   </CTAButton>
                 }
