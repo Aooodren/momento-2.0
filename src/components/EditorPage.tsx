@@ -420,24 +420,42 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
     }));
 
     if (updates.length > 0) {
-      console.log('EditorPage - Saving position updates:', updates);
-      batchUpdatePositions(updates).then((success: boolean) => {
-        if (success) {
-          console.log('✅ EditorPage - Position updates saved successfully');
-          setLastSaved(new Date());
+      console.log('📤 EditorPage - Saving position updates:', updates);
+      
+      // Timeout de sécurité de 10 secondes
+      const saveTimeout = setTimeout(() => {
+        console.warn('⚠️ EditorPage - Save timeout, resetting pending state');
+        setPendingChanges(false);
+        setError('Sauvegarde timeout - veuillez réessayer');
+      }, 10000);
+      
+      batchUpdatePositions(updates)
+        .then((success: boolean) => {
+          clearTimeout(saveTimeout);
+          if (success) {
+            console.log('✅ EditorPage - Position updates saved successfully');
+            setLastSaved(new Date());
+            setPendingChanges(false);
+            positionUpdatesRef.current.clear();
+            setError(null); // Clear any previous error
+            
+            // Sauvegarder aussi l'état complet du canvas côté serveur
+            const canvasData = buildCanvasData();
+            saveCanvasData(project.id, canvasData).catch((err: Error) => {
+              console.error('EditorPage - Failed to save canvas data after positions:', err);
+            });
+          } else {
+            console.error('❌ EditorPage - Failed to save position updates');
+            setPendingChanges(false);
+            setError('Échec de la sauvegarde des positions');
+          }
+        })
+        .catch((err: Error) => {
+          clearTimeout(saveTimeout);
+          console.error('💥 EditorPage - Error saving positions:', err);
           setPendingChanges(false);
-          positionUpdatesRef.current.clear();
-          // Sauvegarder aussi l'état complet du canvas côté serveur
-          const canvasData = buildCanvasData();
-          saveCanvasData(project.id, canvasData).catch((err: Error) => {
-            console.error('EditorPage - Failed to save canvas data after positions:', err);
-          });
-        } else {
-          console.error('EditorPage - Failed to save position updates');
-        }
-      }).catch((err: Error) => {
-        console.error('EditorPage - Error saving positions:', err);
-      });
+          setError('Erreur lors de la sauvegarde: ' + err.message);
+        });
     }
   }, [batchUpdatePositions, buildCanvasData, saveCanvasData, project.id]);
 
@@ -811,6 +829,9 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
 
   // Statut de sauvegarde
   const getSaveStatus = () => {
+    if (error && error.includes('sauvegarde')) {
+      return { text: 'Erreur sauvegarde', color: 'text-red-600', icon: AlertCircle };
+    }
     if (pendingChanges) {
       return { text: 'Sauvegarde...', color: 'text-yellow-600', icon: Loader2 };
     }
