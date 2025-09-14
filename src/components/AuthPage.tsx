@@ -194,7 +194,8 @@ export default function AuthPage() {
                   </Button>
                 </form>
 
-                {/* Séparateur */}
+{/* Google OAuth désactivé temporairement */}
+                {/* 
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t" />
@@ -204,7 +205,6 @@ export default function AuthPage() {
                   </div>
                 </div>
 
-                {/* Bouton Google */}
                 <Button 
                   type="button" 
                   variant="outline" 
@@ -215,6 +215,7 @@ export default function AuthPage() {
                   <FaGoogle className="mr-2 h-4 w-4 text-red-500" />
                   Continuer avec Google
                 </Button>
+                */}
               </TabsContent>
 
               {/* Formulaire d'inscription */}
