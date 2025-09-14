@@ -31,9 +31,9 @@ export function useCanvasAPI() {
     clearError();
     try {
       const { data, error } = await supabase
-        .from('project_dashboard')
+        .from('projects')
         .select('*')
-        .order('updated_at', { ascending: false });
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
       return data as Project[] || [];
@@ -48,14 +48,14 @@ export function useCanvasAPI() {
     setLoading(true);
     clearError();
     try {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) throw new Error('Not authenticated');
-
       const { data, error } = await supabase
         .from('projects')
         .insert({
-          ...project,
-          created_by: user.user.id
+          title: project.title || 'Nouveau Projet',
+          description: project.description,
+          type: project.type || 'design-thinking',
+          metadata: project.metadata || {},
+          canvas_config: project.canvas_config || {}
         })
         .select()
         .single();
@@ -113,9 +113,6 @@ export function useCanvasAPI() {
     setLoading(true);
     clearError();
     try {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) throw new Error('Not authenticated');
-
       const { data, error } = await supabase
         .from('blocks')
         .insert({
