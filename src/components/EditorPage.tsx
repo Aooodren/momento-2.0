@@ -649,92 +649,6 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
     }
   };
 
-  // Créer un bloc Claude-Figma
-  const handleCreateClaudeFigmaBlock = async () => {
-    try {
-      const claudeFigmaBlock = await createBlock(project.id, {
-        title: "Claude + Figma",
-        description: "Analyse de designs Figma avec Claude",
-        type: "claude-figma",
-        position_x: Math.random() * 400 + 100,
-        position_y: Math.random() * 300 + 100,
-        metadata: {
-          prompt: '',
-          figmaConfig: {
-            analysisType: 'design-critique'
-          },
-          outputConfig: {
-            format: 'structured',
-            language: 'fr',
-            includeImages: true
-          },
-          model: 'claude-3-sonnet'
-        }
-      });
-
-      if (claudeFigmaBlock) {
-        const newNode: Node = {
-          id: claudeFigmaBlock.id,
-          type: 'claude-figma',
-          position: { x: claudeFigmaBlock.position_x, y: claudeFigmaBlock.position_y },
-          data: {
-            ...claudeFigmaBlock,
-            onEdit: handleEditBlock,
-            onDelete: handleDeleteBlock,
-          },
-        };
-
-        setNodes((nds) => [...nds, newNode]);
-        setBlocks((blocks) => [...blocks, claudeFigmaBlock]);
-      }
-    } catch (err) {
-      console.error('Erreur création bloc Claude-Figma:', err);
-    }
-  };
-
-  // Créer un bloc Claude-Notion
-  const handleCreateClaudeNotionBlock = async () => {
-    try {
-      const claudeNotionBlock = await createBlock(project.id, {
-        title: "Claude + Notion",
-        description: "Traitement de contenu Notion avec Claude",
-        type: "claude-notion",
-        position_x: Math.random() * 400 + 100,
-        position_y: Math.random() * 300 + 100,
-        metadata: {
-          prompt: '',
-          notionConfig: {
-            sourceType: 'page',
-            processType: 'content-enhancement'
-          },
-          outputConfig: {
-            action: 'create-page',
-            format: 'text',
-            language: 'fr'
-          },
-          model: 'claude-3-sonnet'
-        }
-      });
-
-      if (claudeNotionBlock) {
-        const newNode: Node = {
-          id: claudeNotionBlock.id,
-          type: 'claude-notion',
-          position: { x: claudeNotionBlock.position_x, y: claudeNotionBlock.position_y },
-          data: {
-            ...claudeNotionBlock,
-            onEdit: handleEditBlock,
-            onDelete: handleDeleteBlock,
-          },
-        };
-
-        setNodes((nds) => [...nds, newNode]);
-        setBlocks((blocks) => [...blocks, claudeNotionBlock]);
-      }
-    } catch (err) {
-      console.error('Erreur création bloc Claude-Notion:', err);
-    }
-  };
 
   // Éditer un bloc existant
   const handleEditBlock = (blockId: string) => {
@@ -1215,22 +1129,6 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
                   <span className="font-medium">Bloc Claude AI</span>
                   <span className="text-xs text-muted-foreground">
                     Assistant IA généraliste avec prompts personnalisés
-                  </span>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleCreateClaudeFigmaBlock}>
-                <div className="flex flex-col items-start">
-                  <span className="font-medium">Claude + Figma</span>
-                  <span className="text-xs text-muted-foreground">
-                    Analyse de designs Figma avec intelligence artificielle
-                  </span>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleCreateClaudeNotionBlock}>
-                <div className="flex flex-col items-start">
-                  <span className="font-medium">Claude + Notion</span>
-                  <span className="text-xs text-muted-foreground">
-                    Traitement de contenu Notion avec Claude
                   </span>
                 </div>
               </DropdownMenuItem>
