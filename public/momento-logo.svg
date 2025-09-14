@@ -1,0 +1,16 @@
+<svg width="1024" height="196" viewBox="0 0 1024 196" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Logo circle avec icône -->
+  <circle cx="98" cy="98" r="98" fill="#0F4A3C"/>
+  
+  <!-- Icône chat dans le cercle -->
+  <g transform="translate(50, 50)">
+    <path d="M24 48C24 57.9411 15.9411 66 6 66C-4.94113 66 -13 57.9411 -13 48C-13 38.0589 -4.94113 30 6 30C15.9411 30 24 38.0589 24 48Z" fill="white"/>
+    <path d="M51 48C51 57.9411 42.9411 66 33 66C23.0589 66 15 57.9411 15 48C15 38.0589 23.0589 30 33 30C42.9411 30 51 38.0589 51 48Z" fill="white"/>
+    <path d="M78 48C78 57.9411 69.9411 66 60 66C50.0589 66 42 57.9411 42 48C42 38.0589 50.0589 30 60 30C69.9411 30 78 38.0589 78 48Z" fill="white"/>
+  </g>
+  
+  <!-- Texte "momento" -->
+  <g transform="translate(220, 40)">
+    <text x="0" y="70" font-family="Inter, sans-serif" font-size="96" font-weight="700" fill="#0F4A3C">momento</text>
+  </g>
+</svg>

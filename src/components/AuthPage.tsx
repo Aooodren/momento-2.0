@@ -101,6 +101,15 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
+        {/* Logo Momento */}
+        <div className="flex justify-center mb-8">
+          <img 
+            src="/momento-logo.svg" 
+            alt="Momento" 
+            className="h-12 w-auto"
+          />
+        </div>
+        
         <Card className="shadow-lg border-0">
           <CardHeader className="space-y-1 pb-4">
             <CardTitle className="text-xl text-center">Bienvenue</CardTitle>
