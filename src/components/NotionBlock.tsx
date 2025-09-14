@@ -21,7 +21,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Input } from './ui/input';
 import { ScrollArea } from './ui/scroll-area';
 import { Separator } from './ui/separator';
-import { notionService, NotionPage, NotionDatabase } from '../services/notionService';
+import { secureNotionService, NotionPage, NotionDatabase } from '../services/secureNotionService';
 
 export interface NotionBlockData {
   id: string;
@@ -82,44 +82,44 @@ function NotionBlock({ data, selected }: NotionBlockProps) {
     }
   };
 
-  // Charger les pages et databases Notion
+  // Charger les pages et databases Notion de manière sécurisée
   const loadNotionContent = async () => {
     setIsLoading(true);
     setError(null);
     
     try {
-      const isConnected = await notionService.isConnected();
+      const isConnected = await secureNotionService.isConnected();
       if (!isConnected) {
         throw new Error('Non connecté à Notion');
       }
 
       const [pagesData, databasesData] = await Promise.all([
-        notionService.getPages(),
-        notionService.getDatabases()
+        secureNotionService.getPages(),
+        secureNotionService.getDatabases()
       ]);
 
       setPages(pagesData);
       setDatabases(databasesData);
     } catch (error: any) {
-      console.error('Erreur lors du chargement du contenu Notion:', error);
+      console.error('Erreur lors du chargement sécurisé du contenu Notion:', error);
       setError(error.message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Sélectionner une page Notion
+  // Sélectionner une page Notion de manière sécurisée
   const selectNotionPage = async (page: NotionPage) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      // Charger le contenu de la page
-      const pageContent = await notionService.getPageContent(page.id);
+      // Charger le contenu de la page de manière sécurisée
+      const pageContent = await secureNotionService.getPageContent(page.id);
       
       // Mettre à jour les données du bloc (normalement via un callback)
       // Pour l'instant, on simule la mise à jour
-      console.log('Page sélectionnée:', {
+      console.log('Page sélectionnée de manière sécurisée:', {
         pageId: page.id,
         title: page.title,
         content: pageContent.content,
@@ -133,7 +133,7 @@ function NotionBlock({ data, selected }: NotionBlockProps) {
       // Par exemple : onUpdateBlockData(data.id, { notionPageId: page.id, ... })
 
     } catch (error: any) {
-      console.error('Erreur lors de la sélection de la page:', error);
+      console.error('Erreur lors de la sélection sécurisée de la page:', error);
       setError(error.message);
     } finally {
       setIsLoading(false);
@@ -159,14 +159,14 @@ function NotionBlock({ data, selected }: NotionBlockProps) {
     }
   };
 
-  // Rafraîchir le contenu
+  // Rafraîchir le contenu de manière sécurisée
   const refreshContent = async () => {
     if (!data.notionPageId) return;
     
     setIsLoading(true);
     try {
-      const pageContent = await notionService.getPageContent(data.notionPageId);
-      console.log('Contenu rafraîchi:', pageContent);
+      const pageContent = await secureNotionService.getPageContent(data.notionPageId);
+      console.log('Contenu rafraîchi de manière sécurisée:', pageContent);
       // Mettre à jour le bloc avec le nouveau contenu
     } catch (error: any) {
       setError(error.message);
