@@ -18,9 +18,9 @@ export function SimpleButton({
 }: SimpleButtonProps) {
   
   const variants = {
-    primary: "bg-gray-900 text-white hover:bg-gray-800",
-    outline: "border border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white",
-    ghost: "hover:bg-gray-100"
+    primary: "bg-gray-900 text-white hover:bg-gray-800 shadow-sm",
+    outline: "border-2 border-gray-900 text-gray-900 bg-white hover:bg-gray-900 hover:text-white",
+    ghost: "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
   };
 
   return (

@@ -116,7 +116,7 @@ export default function MyProjectPage({ onProjectSelect }: MyProjectPageProps) {
   };
 
   return (
-    <div className="flex-1 p-6">
+    <div className="flex-1 p-8">
       <div className="max-w-7xl mx-auto">
         {/* En-tête moderne */}
         <div className="mb-8">
@@ -183,7 +183,7 @@ export default function MyProjectPage({ onProjectSelect }: MyProjectPageProps) {
             />
           </FadeIn>
         ) : (
-          <StaggeredList className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <StaggeredList className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {supabaseProjects.map((project, index) => (
             <ProjectContextMenu
               key={`${project.id}-${thumbnailVersion}`}
@@ -216,7 +216,7 @@ export default function MyProjectPage({ onProjectSelect }: MyProjectPageProps) {
                 </div>
                 
                 {/* Contenu */}
-                <div className="p-5">
+                <div className="p-6">
                   {/* En-tête avec titre et type */}
                   <div className="mb-4">
                     <div className="flex items-start justify-between mb-2">

@@ -9,7 +9,7 @@ export function ProjectCardSkeleton() {
       <div className="aspect-video bg-gray-200 animate-pulse rounded-t-xl" />
       
       {/* Contenu */}
-      <div className="p-5 space-y-4">
+      <div className="p-6 space-y-4">
         <div className="space-y-3">
           <div className="space-y-2">
             <Skeleton className="h-5 w-3/4 rounded-lg" />
