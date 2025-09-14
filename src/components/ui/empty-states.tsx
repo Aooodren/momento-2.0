@@ -1,4 +1,5 @@
 import { Button } from "./button";
+import { CTAButton, PremiumButton, GradientButton } from "./premium-button";
 import { Card } from "./card";
 import { 
   Plus, 
@@ -74,14 +75,20 @@ export function NoProjectsEmptyState({
       }
       actions={
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Button onClick={onInitDemo} variant="outline" className="gap-2">
-            <Zap className="h-4 w-4" />
+          <GradientButton 
+            onClick={onInitDemo} 
+            className="gap-2"
+            icon={<Zap className="h-4 w-4" />}
+          >
             Voir la démo
-          </Button>
-          <Button onClick={onCreateProject} className="gap-2">
-            <Plus className="h-4 w-4" />
+          </GradientButton>
+          <CTAButton 
+            onClick={onCreateProject} 
+            className="gap-2"
+            icon={<Plus className="h-4 w-4" />}
+          >
             Créer un projet
-          </Button>
+          </CTAButton>
         </div>
       }
     />
@@ -110,10 +117,13 @@ export function EmptyCanvasEmptyState({
       }
       actions={
         <div className="space-y-2">
-          <Button onClick={onCreateBlock} className="gap-2">
-            <Plus className="h-4 w-4" />
+          <CTAButton 
+            onClick={onCreateBlock} 
+            className="gap-2"
+            icon={<Plus className="h-4 w-4" />}
+          >
             Créer un bloc
-          </Button>
+          </CTAButton>
           <p className="text-xs text-muted-foreground">
             Ou faites glisser un élément depuis la palette
           </p>
@@ -161,10 +171,13 @@ export function NoIntegrationsEmptyState({
       description="Intégrez Momento avec vos applications préférées pour un workflow plus fluide."
       icon={<Zap className="h-8 w-8 text-blue-600" />}
       actions={
-        <Button onClick={onConnect} className="gap-2">
-          <Plus className="h-4 w-4" />
+        <CTAButton 
+          onClick={onConnect} 
+          className="gap-2"
+          icon={<Plus className="h-4 w-4" />}
+        >
           Ajouter une intégration
-        </Button>
+        </CTAButton>
       }
     />
   );
@@ -182,10 +195,13 @@ export function NoCollaboratorsEmptyState({
       description="Collaborez en temps réel avec vos collègues sur ce projet."
       icon={<Users className="h-8 w-8 text-purple-600" />}
       actions={
-        <Button onClick={onInvite} className="gap-2">
-          <Plus className="h-4 w-4" />
+        <CTAButton 
+          onClick={onInvite} 
+          className="gap-2"
+          icon={<Plus className="h-4 w-4" />}
+        >
           Inviter des collaborateurs
-        </Button>
+        </CTAButton>
       }
     />
   );

@@ -12,6 +12,7 @@ import { Badge } from "./ui/badge";
 import ShareProjectDialog from "./ShareProjectDialog";
 import ProjectCreateDialog from "./ProjectCreateDialog";
 import { FadeIn, StaggeredList, HoverCard, PressableButton } from "./ui/animations";
+import { CTAButton } from "./ui/premium-button";
 
 interface ProjectDetails {
   id: string; // Changed to string
@@ -139,18 +140,17 @@ export default function MyProjectPage({ onProjectSelect }: MyProjectPageProps) {
               <ProjectCreateDialog 
                 onProjectCreate={handleCreateProject}
                 trigger={
-                  <PressableButton 
+                  <CTAButton 
                     disabled={isCreatingProject}
-                    className="gap-2"
                     data-testid="create-project-button"
-                  >
-                    {isCreatingProject ? (
+                    icon={isCreatingProject ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       <Plus className="h-4 w-4" />
                     )}
+                  >
                     Nouveau projet
-                  </PressableButton>
+                  </CTAButton>
                 }
               />
             </div>
