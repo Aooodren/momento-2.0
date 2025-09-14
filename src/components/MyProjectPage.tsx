@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from "./ui/alert";
 import { Badge } from "./ui/badge";
 import ShareProjectDialog from "./ShareProjectDialog";
 import ProjectCreateDialog from "./ProjectCreateDialog";
+import { FadeIn, StaggeredList, HoverCard, PressableButton } from "./ui/animations";
 
 interface ProjectDetails {
   id: string; // Changed to string
@@ -138,9 +139,10 @@ export default function MyProjectPage({ onProjectSelect }: MyProjectPageProps) {
               <ProjectCreateDialog 
                 onProjectCreate={handleCreateProject}
                 trigger={
-                  <Button 
+                  <PressableButton 
                     disabled={isCreatingProject}
                     className="gap-2"
+                    data-testid="create-project-button"
                   >
                     {isCreatingProject ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -148,7 +150,7 @@ export default function MyProjectPage({ onProjectSelect }: MyProjectPageProps) {
                       <Plus className="h-4 w-4" />
                     )}
                     Nouveau projet
-                  </Button>
+                  </PressableButton>
                 }
               />
             </div>
@@ -173,12 +175,14 @@ export default function MyProjectPage({ onProjectSelect }: MyProjectPageProps) {
             <ProjectGridSkeleton count={6} />
           </div>
         ) : supabaseProjects.length === 0 ? (
-          <NoProjectsEmptyState 
-            onCreateProject={handleCreateProject}
-            onInitDemo={handleInitDemo}
-          />
+          <FadeIn>
+            <NoProjectsEmptyState 
+              onCreateProject={handleCreateProject}
+              onInitDemo={handleInitDemo}
+            />
+          </FadeIn>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <StaggeredList className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {supabaseProjects.map((project, index) => (
             <ProjectContextMenu
               key={`${project.id}-${thumbnailVersion}`}
@@ -192,7 +196,7 @@ export default function MyProjectPage({ onProjectSelect }: MyProjectPageProps) {
                 onDelete={handleDelete}
                 onThumbnailImported={handleThumbnailImported}
               >
-              <Card 
+              <HoverCard 
                 className="group relative overflow-hidden bg-card border border-border hover:border-primary/20 transition-colors duration-200 cursor-pointer p-0"
                 onClick={() => handleCardClick(project)}
               >
@@ -252,10 +256,10 @@ export default function MyProjectPage({ onProjectSelect }: MyProjectPageProps) {
                 </div>
 
 
-              </Card>
+              </HoverCard>
               </ProjectContextMenu>
             ))}
-          </div>
+          </StaggeredList>
         )}
       </div>
 

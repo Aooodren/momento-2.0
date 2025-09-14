@@ -41,6 +41,8 @@ import CollaboratorCursors from './CollaboratorCursors';
 import { useNotify } from './ui/notifications';
 import { CanvasGridSkeleton } from './ui/skeletons';
 import { EmptyCanvasEmptyState } from './ui/empty-states';
+import { FadeIn, PressableButton, HoverCard, ScrollTrigger } from './ui/animations';
+import { useCanvasShortcuts } from '../hooks/useKeyboardShortcuts';
 
 interface ProjectDetails {
   id: string;
@@ -90,6 +92,33 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
   const [showLayersPanel, setShowLayersPanel] = useState(false);
   const [hiddenBlocks, setHiddenBlocks] = useState<Set<string>>(new Set());
   
+  // Configuration des raccourcis clavier du canvas
+  const { shortcuts: canvasShortcuts } = useCanvasShortcuts({
+    onCreateBlock: () => {
+      handleCreateStandardBlock();
+    },
+    onDeleteSelection: () => {
+      // TODO: Implémenter la suppression des éléments sélectionnés
+      console.log('Suppression des éléments sélectionnés à implémenter');
+    },
+    onAutoLayout: () => {
+      if (autoLayout) {
+        autoLayout();
+      }
+    },
+    onFitView: () => {
+      // TODO: Accéder aux méthodes ReactFlow pour ajuster la vue
+      console.log('Ajuster à la vue à implémenter');
+    },
+    onToggleGrid: () => {
+      // TODO: Basculer l'affichage de la grille
+      console.log('Basculer la grille à implémenter');
+    },
+    onToggleMinimap: () => {
+      // TODO: Basculer l'affichage de la minimap
+      console.log('Basculer la minimap à implémenter');
+    },
+  });
 
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const layoutInfoTimeoutRef = useRef<NodeJS.Timeout>();
@@ -923,10 +952,10 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
       {/* Header */}
       <div className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-6 flex-shrink-0">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={onBack} className="gap-2">
+          <PressableButton variant="ghost" size="sm" onClick={onBack} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
             Retour
-          </Button>
+          </PressableButton>
           <div className="border-l border-gray-300 h-6"></div>
           {/* Nom du projet éditable */}
           {isEditingProjectName ? (
@@ -1127,11 +1156,11 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
           {/* Menu de création de blocs */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size="sm" className="gap-2">
+              <PressableButton size="sm" className="gap-2">
                 <Plus className="w-4 h-4" />
                 Nouveau bloc
                 <ChevronDown className="w-3 h-3" />
-              </Button>
+              </PressableButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64">
               <DropdownMenuItem onClick={handleCreateStandardBlock}>
@@ -1272,7 +1301,9 @@ export default function EditorPage({ project, onBack, onProjectUpdate }: EditorP
       {/* Canvas vide */}
       {!isLoading && nodes.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
-          <EmptyCanvasEmptyState onCreateBlock={handleCreateStandardBlock} />
+          <FadeIn>
+            <EmptyCanvasEmptyState onCreateBlock={handleCreateStandardBlock} />
+          </FadeIn>
         </div>
       )}
 

@@ -15,6 +15,9 @@ import NotionOAuthCallback from "./components/NotionOAuthCallback";
 import { Loader2 } from "lucide-react";
 import { useAuth, AuthContext } from "./hooks/useAuth";
 import { ThemeProvider } from "./components/ThemeProvider";
+import { useGlobalShortcuts } from "./hooks/useKeyboardShortcuts";
+import KeyboardShortcutsHelp from "./components/KeyboardShortcutsHelp";
+import GlobalSearch from "./components/GlobalSearch";
 
 type PageType = 'myproject' | 'detail' | 'editor' | 'settings' | 'share' | 'project-edit' | 'invitation' | 'integrations' | 'oauth-callback' | 'auth-callback';
 
@@ -36,6 +39,34 @@ export default function App() {
   const [selectedProject, setSelectedProject] = useState<ProjectDetails | null>(null);
   const [previousPage, setPreviousPage] = useState<'myproject'>('myproject');
   const [invitationToken, setInvitationToken] = useState<string | null>(null);
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
+  const [showGlobalSearch, setShowGlobalSearch] = useState(false);
+
+  // Configuration des raccourcis clavier globaux
+  const { shortcuts } = useGlobalShortcuts({
+    onNewProject: () => {
+      if (currentPage === 'myproject') {
+        // Trigger new project creation
+        const createButton = document.querySelector('[data-testid="create-project-button"]');
+        if (createButton) {
+          (createButton as HTMLButtonElement).click();
+        }
+      }
+    },
+    onSearch: () => {
+      setShowGlobalSearch(true);
+    },
+    onOpenSettings: () => {
+      navigateToPage('settings');
+    },
+    onShowHelp: () => {
+      setShowShortcutsHelp(true);
+    },
+    onToggleTheme: () => {
+      // TODO: Implémenter le basculement de thème
+      console.log('Basculement de thème à implémenter');
+    },
+  });
 
   // Check for invitation parameters in URL on mount
   useEffect(() => {
@@ -380,6 +411,21 @@ export default function App() {
             </div>
           </div>
         </div>
+
+        {/* Dialog d'aide pour les raccourcis clavier */}
+        <KeyboardShortcutsHelp
+          isOpen={showShortcutsHelp}
+          onClose={() => setShowShortcutsHelp(false)}
+          shortcuts={shortcuts}
+        />
+
+        {/* Dialog de recherche globale */}
+        <GlobalSearch
+          isOpen={showGlobalSearch}
+          onClose={() => setShowGlobalSearch(false)}
+          onNavigateToProject={navigateToProject}
+          onNavigateToPage={navigateToPage}
+        />
       </ThemeProvider>
     </AuthContext.Provider>
   );
